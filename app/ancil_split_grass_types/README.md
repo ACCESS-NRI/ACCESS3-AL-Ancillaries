@@ -14,4 +14,4 @@ This relies on a non-provenanced dataset, and should be retired when an appropri
 * `VEGETATION_MAPPING`: JSON file describing the mapping from `GRASS_SOURCE` vegetation types to `ORIG_FRACTIONS` vegetation types.
 
 #### Outputs
-* `OUTPUT`: Path to write the output to in PP format and NetCDF format with the `.nc` extension.
+* `OUTPUT`: Path to write the output to in PP format and NetCDF format with the `.nc` extension. By default this is the same path as `ORIG_FRACTIONS`, so the app overwrites it in place- this lets `ancil_split_grass_types` be freely combined with the CCI-Ancillary-Suite's other `LAND_COVER_PREPROCESSING` steps regardless of which are selected. A copy of the NetCDF output is also written to `preproc/qrparm.veg.frac_ancil_split_grass_types.nc` for traceability.
