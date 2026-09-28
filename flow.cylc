@@ -1,6 +1,32 @@
 #!jinja2
 {% include "task_resources.cylc" %}
 
+{#
+    Land cover fraction (vegfrac) post-processing- see LAND_COVER_PREPROCESSING
+    in rose-meta.conf. ancil_lct and every post-processing app read and
+    overwrite the same vegetation/qrparm.veg.frac ancillary in place (each
+    app also keeps a snapshot of its output in preproc for traceability- see
+    the apps' own rose-app.conf), so any selected subset can be chained with
+    a plain "=>" without flow.cylc needing to know about file names. Selected
+    steps always run in the fixed order listed here, regardless of the order
+    they were selected in. Each step's 'graph' is the cylc graph text for
+    that step alone (including any one-off prep task it needs, e.g.
+    regridding an external source onto the target grid).
+#}
+{% set VEGFRAC_STEPS = [
+    {'key': 'c4-fraction', 'graph': 'regrid_C4_fraction => ancil_C4_fraction'},
+    {'key': 'fix-antarctic-permanent-ice', 'graph': 'ancil_fix_antarctic_permanent_ice'},
+    {'key': 'split-grass-types', 'graph': 'regrid_ncar_lulcc => ancil_split_grass_types'},
+] %}
+
+{% set VEGFRAC_CHAIN = ['ancil_lct'] %}
+{% for step in VEGFRAC_STEPS %}
+    {% if step.key in LAND_COVER_PREPROCESSING %}
+        {% set _ = VEGFRAC_CHAIN.append(step.graph) %}
+    {% endif %}
+{% endfor %}
+{% set _ = VEGFRAC_CHAIN.append('vegfrac_postproc') %}
+
 [meta]
 	title = "CCI Ancillary Suite"
 	description = "Create a set of ancillaries using CCI Land Cover as the primary data source."
@@ -12,18 +38,17 @@
 				landseamask_from_ocean_mesh => ancil_lct
 			{% endif %}
 			preprocess_CCI_water => ancil_lct
-			ancil_lct => regrid_ncar_lulcc
-			ancil_lct => ancil_fix_antarctic_permanent_ice
-			(ancil_fix_antarctic_permanent_ice & regrid_ncar_lulcc) => ancil_split_grass_types
+			{{ VEGFRAC_CHAIN | join(' => ') }}
+
 			ancil_lct => regrid_LAI
-			(ancil_split_grass_types & regrid_LAI) => ancil_LAI
+			(vegfrac_postproc & regrid_LAI) => ancil_LAI
 			ancil_LAI => ancil_canopy_height
 			(ancil_LAI & ancil_canopy_height) => merge_veg_func
-			ancil_split_grass_types => ancil_soil_hydrology
-			ancil_split_grass_types => ancil_topographic_index
-			ancil_split_grass_types => ancil_soil_albedo
+			vegfrac_postproc => ancil_soil_hydrology
+			vegfrac_postproc => ancil_topographic_index
+			vegfrac_postproc => ancil_soil_albedo
 			(ancil_soil_hydrology & ancil_soil_albedo) => merge_soils
-			(ancil_split_grass_types & merge_soils) => ancil_soil_dust
+			(vegfrac_postproc & merge_soils) => ancil_soil_dust
 			(ancil_lct & ancil_LAI) => ancil_soil_roughness
             {% if SOIL_INITIAL_CONDITIONS %}
                 {% if SOIL_INIT_CONDS_METHOD == "functional" %}
@@ -125,6 +150,12 @@
 			{% elif LAND_MODEL == "JULES" %}
 				DEFAULT_TRANSFORM = "cci2jules.json"
 			{% endif %}
+
+	[[vegfrac_postproc]]
+		# A checkpoint with no work of its own- it always sits at the end of
+		# the vegfrac post-processing chain (whichever steps were selected),
+		# so downstream tasks have one stable task to depend on.
+		script = true
 
 	[[regrid_C4_fraction]]
 		inherit = PBS_medium_parallel

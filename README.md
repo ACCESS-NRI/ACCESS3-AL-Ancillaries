@@ -40,8 +40,23 @@ Defaults to `"/scratch/rp23/lw5085/access-om3-025deg-ESMFmesh.nc"`.
 * `RESOLUTION`: Used only when `GRID_SOURCE="ocean_mesh"`. Must be a valid UM resolution specifier e.g. `n96e`, `n512e`.
 * `URBAN`: Whether to include urban fractions in the surface type mapping.
 * `CCI_YEAR`: Which year to use from the CCI land cover dataset. Defaults to `2015`.
+* `LAND_COVER_PREPROCESSING`: Which post-processing steps to apply to the CCI land cover fractions produced by `ancil_lct`. See [Land Cover Post-Processing](#land-cover-post-processing) below. Defaults to all three available steps.
 * `BEGIN_YEAR`: Starting year for time series ancillaries. Defaults to `1982`.
 * `END_YEAR`: End year for the time series ancillaries. Defaults to `1990`.
+
+## Land Cover Post-Processing
+
+The land cover fractions produced by `ancil_lct` can be refined by a set of optional post-processing steps, selected via `LAND_COVER_PREPROCESSING` (in `rose-suite.conf`, or the "Land cover preprocessing" option under the "land" page in `rose edit`). Any combination of steps may be selected, including none.
+
+Available steps:
+
+* `c4-fraction` (`ancil_C4_fraction`): Splits the combined C3/C4 grass fraction using the ISLSCP II C4 Vegetation Percentage dataset. Requires `regrid_C4_fraction` to have regridded that source onto the target grid first.
+* `fix-antarctic-permanent-ice` (`ancil_fix_antarctic_permanent_ice`): Sets land points below -60 degrees latitude to 100% ice, correcting misclassification near the Antarctic coastline.
+* `split-grass-types` (`ancil_split_grass_types`): Splits the combined short-vegetation classes into C3/C4 grass, arctic grass and shrub sub-types, using a regridded NCAR LULCC dataset. Requires `regrid_ncar_lulcc` to have regridded that source onto the target grid first.
+
+`ancil_lct` and every post-processing app read and overwrite the same `share/data/vegetation/qrparm.veg.frac` ancillary in place (this is each app's own default- see its `rose-app.conf`), so whichever subset is selected always runs in the fixed order above (each app was written expecting the output of the one before it). Each selected step's prep task (e.g. `regrid_ncar_lulcc`) only runs when needed. As part of its own command, each post-processing app also copies its output to `share/data/preproc/qrparm.veg.frac_<app_name>` (e.g. `qrparm.veg.frac_ancil_split_grass_types`) for traceability; this copy plays no part in the workflow itself.
+
+`flow.cylc` only has to build the task graph from the selection- since every step already shares the same file by default, it doesn't need to override any app configuration. Downstream tasks (`ancil_LAI`, `ancil_soil_hydrology`, `ancil_topographic_index`, `ancil_soil_albedo`, `ancil_soil_dust`) depend on a single `vegfrac_postproc` checkpoint task rather than on any individual post-processing step, so they don't need to change if the set of available steps changes in future.
 
 ## Common App Configurations
 
