@@ -66,6 +66,11 @@ import soil_cosby_parameters
 
 _ICE_VALUE = {"soil_thermal_capacity": 630000, "soil_thermal_conductivity": 0.2650}
 
+# Hot-fix for bad lookup table values, keyed by unique soil ID. Soil ID 610 has
+# a bad bulk density (BD, kg m-3; 0.26 g cm-3 = 260 kg m-3) and soil carbon
+# (soil_carb, kg m-2).
+SOIL_PARAMETER_HOTFIXES = {"610": {"BD": 260.0, "soil_carb": 23.97}}
+
 
 # jules parameters to be saved to the ancillary
 MAPPING = {
@@ -730,7 +735,36 @@ def lookup_table_loader(lookup_filepath):
     """
     with open(lookup_filepath, "r") as fh:
         lookup_table = json.load(fh)
-    return lookup_table
+    return apply_soil_parameter_hotfixes(lookup_table, SOIL_PARAMETER_HOTFIXES)
+
+
+def apply_soil_parameter_hotfixes(lookup_table, hotfixes):
+    """
+    Override known-bad entries of the soil lookup table.
+
+    Hot-fix for bad values in the upstream lookup table, which is shared
+    with other users and so is not corrected at source. Remove the
+    corresponding entry from SOIL_PARAMETER_HOTFIXES once upstream is fixed.
+
+    Parameters
+    ----------
+    lookup_table : dict
+        Soil lookup table, as returned by json.load.
+    hotfixes : dict
+        Maps a unique soil ID (str) to a dictionary of parameter names and
+        the replacement values.
+
+    Return
+    ------
+    : dict
+        Soil lookup table with the replacement values applied.
+
+    """
+    patched_parameter_lookup = {
+        soil_id: {**parameters, **hotfixes.get(soil_id, {})}
+        for soil_id, parameters in lookup_table["soilid_parameter_lookup"].items()
+    }
+    return {**lookup_table, "soilid_parameter_lookup": patched_parameter_lookup}
 
 
 def main(soil_units_filepath, lct_fraction_filepath, lookup_filepath, ice_tile_id, output, netcdf_only):
