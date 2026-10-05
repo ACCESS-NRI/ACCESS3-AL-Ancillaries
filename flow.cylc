@@ -12,6 +12,8 @@
 				(landseamask_from_ocean_mesh & preprocess_CCI_water) => ancil_lct
             {% elif GRID_SOURCE == "land_fractions" %}
                 (landseamask_from_land_fractions & preprocess_CCI_water) => ancil_lct
+			{% else %}
+				preprocess_CCI_water => ancil_lct
 			{% endif %}
 			ancil_lct => regrid_ncar_lulcc
 			ancil_lct => ancil_fix_antarctic_permanent_ice
