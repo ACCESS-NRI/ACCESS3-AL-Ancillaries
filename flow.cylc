@@ -12,20 +12,22 @@
                 (landseamask_from_ocean_mesh & preprocess_CCI_water) => ancil_lct
             {% elif GRID_SOURCE == "land_fractions" %}
                 (landseamask_from_land_fractions & preprocess_CCI_water) => ancil_lct
-            {% endif %}
-            ancil_lct => regrid_ncar_lulcc
-            ancil_lct => ancil_fix_antarctic_permanent_ice
-            (ancil_fix_antarctic_permanent_ice & regrid_ncar_lulcc) => ancil_split_grass_types
-            ancil_lct => regrid_LAI
-            (ancil_split_grass_types & regrid_LAI) => ancil_LAI
-            ancil_LAI => ancil_canopy_height
-            (ancil_LAI & ancil_canopy_height) => merge_veg_func
-            ancil_split_grass_types => ancil_soil_hydrology
-            ancil_split_grass_types => ancil_topographic_index
-            ancil_split_grass_types => ancil_soil_albedo
-            (ancil_soil_hydrology & ancil_soil_albedo) => merge_soils
-            (ancil_split_grass_types & merge_soils) => ancil_soil_dust
-            (ancil_lct & ancil_LAI) => ancil_soil_roughness
+			{% else %}
+				preprocess_CCI_water => ancil_lct
+			{% endif %}
+			ancil_lct => regrid_ncar_lulcc
+			ancil_lct => ancil_fix_antarctic_permanent_ice
+			(ancil_fix_antarctic_permanent_ice & regrid_ncar_lulcc) => ancil_split_grass_types
+			ancil_lct => regrid_LAI
+			(ancil_split_grass_types & regrid_LAI) => ancil_LAI
+			ancil_LAI => ancil_canopy_height
+			(ancil_LAI & ancil_canopy_height) => merge_veg_func
+			ancil_split_grass_types => ancil_soil_hydrology
+			ancil_split_grass_types => ancil_topographic_index
+			ancil_split_grass_types => ancil_soil_albedo
+			(ancil_soil_hydrology & ancil_soil_albedo) => merge_soils
+			(ancil_split_grass_types & merge_soils) => ancil_soil_dust
+			(ancil_lct & ancil_LAI) => ancil_soil_roughness
             {% if SOIL_INITIAL_CONDITIONS %}
                 {% if SOIL_INIT_CONDS_METHOD == "functional" %}
                     ancil_soil_hydrology => functional_soil_initial_conditions
