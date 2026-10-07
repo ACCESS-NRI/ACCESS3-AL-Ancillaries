@@ -7,7 +7,6 @@ Add, delete or edit the list below to add known abbreviations to the site.
 -->
 
 *[UKMO]: UK Met Office
-*[MOSRS]: Met Office Science Repository Service
 *[UM]: Unified Model
 *[ESM]: Earth System Model
 *[CMIP]: Coupled Model Intercomparison Project
@@ -15,12 +14,9 @@ Add, delete or edit the list below to add known abbreviations to the site.
 *[CMIP6]: Coupled Model Intercomparison Project Phase 6
 *[CMIP7]: Coupled Model Intercomparison Project Phase 7
 *[AMIP]: Atmospheric Model Intercomparison Project
-*[HPC]: High-Performance Computing
 *[NCI]: (Australian) National Computational Infrastructure
-*[ARE]: Australian Research Environment
-*[COSIMA]: Consortium for Ocean-Sea Ice Modelling in Australia
 *[SU]: Service Units
-*[ILAMB]: International Land Model Benchmarking
 *[PBS]: Portable Batch System
-*[VDI]: Virtual Desktop Interface
 *[NIWA]: New Zealand National Institute of Water and Atmospheric Research
+*[ESA]: European Space Agency
+*[CCI]: Climate Change Initiative
