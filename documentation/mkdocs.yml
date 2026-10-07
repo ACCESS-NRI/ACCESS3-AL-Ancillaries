@@ -204,6 +204,7 @@ plugins:
 
 hooks:
   - hooks/set_copyright_year.py # Automatically sets the copyright year to the current year
+  - hooks/generate_app_graph.py # Generates the app dependency graph on the Apps page from flow.cylc
   - hooks/hide_pages_url_segment.py # Automatically hides the "/pages" URL segment for pages inside the "pages" directory
 
 copyright: Copyright &copy; {year} ACCESS-NRI
@@ -239,6 +240,8 @@ extra_javascript:
 watch:
   - abbreviations.md
   - hooks/
+  - ../flow.cylc
+  - ../app/
   - mkdocs.yml
   - overrides/
   - references.bib
