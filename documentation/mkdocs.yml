@@ -33,6 +33,52 @@ nav:
       - Example Page: pages/example-section/subsection2/example-page.md
   - Example Section 2:
     - pages/example-section2/index.md
+  - Apps:
+    - pages/apps/index.md
+    - ancil_aeroclim_preproc: pages/apps/ancil_aeroclim_preproc.md
+    - ancil_C4_fraction: pages/apps/ancil_C4_fraction.md
+    - ancil_canopy_height: pages/apps/ancil_canopy_height.md
+    - ancil_clim_dms: pages/apps/ancil_clim_dms.md
+    - ancil_clim_sea: pages/apps/ancil_clim_sea.md
+    - ancil_fix_antarctic_permanent_ice: pages/apps/ancil_fix_antarctic_permanent_ice.md
+    - ancil_LAI: pages/apps/ancil_LAI.md
+    - ancil_lct: pages/apps/ancil_lct.md
+    - ancil_orographic_formdrag: pages/apps/ancil_orographic_formdrag.md
+    - ancil_orographic_formdrag_preproc: pages/apps/ancil_orographic_formdrag_preproc.md
+    - ancil_orographic_wavedrag: pages/apps/ancil_orographic_wavedrag.md
+    - ancil_orography_filtered_preproc: pages/apps/ancil_orography_filtered_preproc.md
+    - ancil_orography_mean: pages/apps/ancil_orography_mean.md
+    - ancil_orography_unfiltered_preproc: pages/apps/ancil_orography_unfiltered_preproc.md
+    - ancil_radiation_parameters: pages/apps/ancil_radiation_parameters.md
+    - ancil_river_routing: pages/apps/ancil_river_routing.md
+    - ancil_river_routing_preproc: pages/apps/ancil_river_routing_preproc.md
+    - ancil_river_storage: pages/apps/ancil_river_storage.md
+    - ancil_river_storage_preproc: pages/apps/ancil_river_storage_preproc.md
+    - ancil_soil_albedo: pages/apps/ancil_soil_albedo.md
+    - ancil_soil_dust: pages/apps/ancil_soil_dust.md
+    - ancil_soil_hydrology: pages/apps/ancil_soil_hydrology.md
+    - ancil_soil_roughness: pages/apps/ancil_soil_roughness.md
+    - ancil_split_grass_types: pages/apps/ancil_split_grass_types.md
+    - ancil_topographic_index: pages/apps/ancil_topographic_index.md
+    - landseamask_from_ocean_mesh: pages/apps/landseamask_from_ocean_mesh.md
+    - merge_soils: pages/apps/merge_soils.md
+    - merge_veg_func: pages/apps/merge_veg_func.md
+    - preprocess_CCI_water: pages/apps/preprocess_CCI_water.md
+    - regrid_aerosol: pages/apps/regrid_aerosol.md
+    - regrid_albedo: pages/apps/regrid_albedo.md
+    - regrid_biog_aerosol: pages/apps/regrid_biog_aerosol.md
+    - regrid_biom_aerosol: pages/apps/regrid_biom_aerosol.md
+    - regrid_blck_aerosol: pages/apps/regrid_blck_aerosol.md
+    - regrid_C4_fraction: pages/apps/regrid_C4_fraction.md
+    - regrid_dust_aerosol: pages/apps/regrid_dust_aerosol.md
+    - regrid_LAI: pages/apps/regrid_LAI.md
+    - regrid_ncar_lulcc: pages/apps/regrid_ncar_lulcc.md
+    - regrid_ocff_aerosol: pages/apps/regrid_ocff_aerosol.md
+    - regrid_ozone: pages/apps/regrid_ozone.md
+    - regrid_seaice_reynolds: pages/apps/regrid_seaice_reynolds.md
+    - regrid_seasalt_aerosol: pages/apps/regrid_seasalt_aerosol.md
+    - regrid_SST_reynolds: pages/apps/regrid_SST_reynolds.md
+    - regrid_sulp_aerosol: pages/apps/regrid_sulp_aerosol.md
   # ...
 
 
