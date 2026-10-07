@@ -1389,3 +1389,50 @@ img.intro-img {
   font-size: 1.5rem;
   width: 1.5rem;
 }
+
+/* Zoomable diagrams (see `makeDiagramsZoomable` in js/custom.js) */
+.zoomable-diagram {
+  position: relative;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.4rem;
+  margin: 1em 0;
+}
+.zoomable-diagram .diagram-viewport {
+  overflow: auto;
+  max-height: 80vh;
+  cursor: grab;
+}
+.zoomable-diagram .diagram-viewport.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+.zoomable-diagram .diagram-controls {
+  position: absolute;
+  top: 0.5rem;
+  right: 1.2rem;
+  z-index: 1;
+  display: flex;
+  gap: 0.25rem;
+}
+.zoomable-diagram .diagram-controls button {
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid var(--md-default-fg-color--lighter);
+  border-radius: 0.3rem;
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.zoomable-diagram .diagram-controls button:hover {
+  background: var(--md-default-fg-color--lightest);
+}
+.zoomable-diagram:fullscreen {
+  background: var(--md-default-bg-color);
+  border: none;
+  margin: 0;
+}
+.zoomable-diagram:fullscreen .diagram-viewport {
+  max-height: 100vh;
+  height: 100vh;
+}

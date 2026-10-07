@@ -100,7 +100,7 @@ def build_condition_tree(task_conditions):
 
 def render_tree(tree, indent, subgraph_ids):
     """Mermaid lines for the tasks and nested conditional subgraphs of a tree node."""
-    lines = [f"{indent}{task}" for task in tree["tasks"]]
+    lines = [f'{indent}{task}("{task}")' for task in tree["tasks"]]
     for label, child in tree["children"].items():
         subgraph_id = f"condition_{len(subgraph_ids)}"
         subgraph_ids.append(subgraph_id)
@@ -126,7 +126,7 @@ def render_mermaid_graph(edges, task_conditions, documented_apps):
         style_lines.append(f"    class {','.join(undocumented)} undocumented")
     style_lines.extend(f"    style {subgraph_id} stroke-dasharray:6 4,fill:none" for subgraph_id in subgraph_ids)
     return "\n".join(
-        ["flowchart LR", *node_lines, "", *edge_lines, "", *click_lines, "", *style_lines]
+        ["flowchart TB", *node_lines, "", *edge_lines, "", *click_lines, "", *style_lines]
     )
 
 
@@ -137,7 +137,7 @@ def find_documented_apps(app_directory):
 def generate_graph_block(flow_file, app_directory):
     edges, mentions = parse_conditional_edges(extract_graph_lines(flow_file.read_text()))
     graph = render_mermaid_graph(edges, assign_task_conditions(mentions), find_documented_apps(app_directory))
-    return f"```mermaid\n{graph}\n```"
+    return f'<div class="zoomable-diagram" markdown>\n\n```mermaid\n{graph}\n```\n\n</div>'
 
 
 def on_page_markdown(markdown, *, page, config, files):

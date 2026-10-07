@@ -340,6 +340,89 @@ function makeCitationLinks() {
   })
 }
 
+/*
+  Make diagrams inside a '.zoomable-diagram' container zoomable (buttons, Ctrl/Cmd + scroll), with a fullscreen toggle
+  and pannable (click and drag, or scroll). Mermaid renders into a closed shadow root, so the
+  diagram is zoomed by resizing its host element, which the diagram then scales to fit.
+*/
+function makeDiagramsZoomable() {
+  const zoomStep = 1.25;
+  const minZoom = 1;
+  const maxZoom = 8;
+  document.querySelectorAll('.zoomable-diagram').forEach(container => {
+    if (container.querySelector('.diagram-viewport')) return;
+    const viewport = document.createElement('div');
+    viewport.classList.add('diagram-viewport');
+    while (container.firstChild) viewport.appendChild(container.firstChild);
+    container.appendChild(viewport);
+
+    let zoom = 1;
+    function applyZoom(newZoom, anchorX = viewport.clientWidth / 2, anchorY = viewport.clientHeight / 2) {
+      const previousZoom = zoom;
+      zoom = Math.min(maxZoom, Math.max(minZoom, newZoom));
+      viewport.querySelectorAll('.mermaid').forEach(diagram => {
+        diagram.style.width = `${zoom * 100}%`;
+        diagram.style.maxWidth = 'none';
+      });
+      // Keep the point under the anchor fixed while zooming
+      const ratio = zoom / previousZoom;
+      viewport.scrollLeft = (viewport.scrollLeft + anchorX) * ratio - anchorX;
+      viewport.scrollTop = (viewport.scrollTop + anchorY) * ratio - anchorY;
+    }
+
+    const controls = document.createElement('div');
+    controls.classList.add('diagram-controls');
+    [['+', 'Zoom in', () => applyZoom(zoom * zoomStep)],
+     ['\u2212', 'Zoom out', () => applyZoom(zoom / zoomStep)],
+     ['\u21ba', 'Reset zoom', () => { applyZoom(1); viewport.scrollTo(0, 0); }],
+     ['\u26f6', 'Toggle fullscreen', () => {
+       if (document.fullscreenElement) document.exitFullscreen();
+       else container.requestFullscreen?.();
+     }],
+    ].forEach(([label, title, onClick]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.title = title;
+      button.setAttribute('aria-label', title);
+      button.addEventListener('click', onClick);
+      controls.appendChild(button);
+    });
+    container.appendChild(controls);
+
+    viewport.addEventListener('wheel', event => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      event.preventDefault();
+      const box = viewport.getBoundingClientRect();
+      applyZoom(zoom * (event.deltaY < 0 ? zoomStep : 1 / zoomStep), event.clientX - box.left, event.clientY - box.top);
+    }, { passive: false });
+
+    let dragStart = null;
+    viewport.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      dragStart = { x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop, moved: false };
+    });
+    window.addEventListener('pointermove', event => {
+      if (!dragStart) return;
+      const deltaX = event.clientX - dragStart.x;
+      const deltaY = event.clientY - dragStart.y;
+      if (!dragStart.moved && Math.hypot(deltaX, deltaY) < 4) return;
+      dragStart.moved = true;
+      viewport.classList.add('dragging');
+      viewport.scrollLeft = dragStart.left - deltaX;
+      viewport.scrollTop = dragStart.top - deltaY;
+    });
+    window.addEventListener('pointerup', () => {
+      viewport.classList.remove('dragging');
+      dragStart = null;
+    });
+    // A drag must not follow the node link it ends on
+    viewport.addEventListener('click', event => {
+      if (viewport.classList.contains('dragging')) event.preventDefault();
+    }, true);
+  });
+}
+
 // Join all functions
 function main() {
   hideTocItems();
@@ -349,6 +432,7 @@ function main() {
   toggleTerminalAnimations();
   makeCitationLinks();
   setUpPermalinks();
+  makeDiagramsZoomable();
 }
 
 // Run all functions after every navigation event
