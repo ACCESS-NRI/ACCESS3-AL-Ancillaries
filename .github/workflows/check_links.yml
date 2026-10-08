@@ -8,10 +8,11 @@
 name: Check links
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  # Automatic triggers disabled for now; re-enable by uncommenting.
+  # push:
+  #   branches:
+  #     - main
+  # pull_request:
   workflow_dispatch:
 
 jobs:
