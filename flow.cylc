@@ -8,10 +8,17 @@
 [scheduling]
 	[[graph]]
 		R1 = """
+			{% if not PREPROCESSING %}
+				setup_preproc_symlink
+			{% endif %}
 			{% if GRID_SOURCE == "ocean_mesh" %}
 				landseamask_from_ocean_mesh => ancil_lct
 			{% endif %}
-			preprocess_CCI_water => ancil_lct
+			{% if PREPROCESSING %}
+				preprocess_CCI_water => ancil_lct
+			{% else %}
+				setup_preproc_symlink => ancil_lct
+			{% endif %}
 			ancil_lct => regrid_ncar_lulcc
 			ancil_lct => ancil_fix_antarctic_permanent_ice
 			(ancil_fix_antarctic_permanent_ice & regrid_ncar_lulcc) => ancil_split_grass_types
@@ -33,24 +40,43 @@
                 {% endif %}
             {% endif %}
             {% if ATMOSPHERE_ANCILLARIES %}
-                (ancil_orographic_formdrag_preproc & ancil_lct) => ancil_orographic_formdrag
-                (ancil_lct & ancil_orography_unfiltered_preproc) => ancil_orography_mean => ancil_orographic_wavedrag
-                (ancil_aeroclim_preproc & ancil_orographic_wavedrag) => regrid_aerosol
+                {% if PREPROCESSING %}
+                    (ancil_orographic_formdrag_preproc & ancil_lct) => ancil_orographic_formdrag
+                    (ancil_lct & ancil_orography_unfiltered_preproc) => ancil_orography_mean => ancil_orographic_wavedrag
+                    (ancil_aeroclim_preproc & ancil_orographic_wavedrag) => regrid_aerosol
+                {% else %}
+                    (setup_preproc_symlink & ancil_lct) => ancil_orographic_formdrag
+                    (ancil_lct & setup_preproc_symlink) => ancil_orography_mean => ancil_orographic_wavedrag
+                    (setup_preproc_symlink & ancil_orographic_wavedrag) => regrid_aerosol
+                {% endif %}
                 ancil_orographic_wavedrag => regrid_seasalt_aerosol
                 ancil_orographic_wavedrag => regrid_biog_aerosol
                 ancil_orographic_wavedrag => regrid_biom_aerosol
-                ancil_orographic_wavedrag => regrid_ofcc_aerosol
+                ancil_orographic_wavedrag => regrid_ocff_aerosol
                 ancil_orographic_wavedrag => regrid_sulp_aerosol
                 ancil_orographic_wavedrag => regrid_blck_aerosol
                 ancil_orographic_wavedrag => regrid_dust_aerosol
-                (ancil_orography_filtered_preproc & ancil_orography_mean) => ancil_orographic_wavedrag => regrid_ozone
+                {% if PREPROCESSING %}
+                    (ancil_orography_filtered_preproc & ancil_orography_mean) => ancil_orographic_wavedrag => regrid_ozone
+                {% else %}
+                    (setup_preproc_symlink & ancil_orography_mean) => ancil_orographic_wavedrag => regrid_ozone
+                {% endif %}
                 ancil_lct => ancil_clim_dms
                 ancil_lct => ancil_clim_sea
-                (ancil_orography_unfiltered_preproc & ancil_lct) => ancil_radiation_parameters
+                {% if PREPROCESSING %}
+                    (ancil_orography_unfiltered_preproc & ancil_lct) => ancil_radiation_parameters
+                {% else %}
+                    (setup_preproc_symlink & ancil_lct) => ancil_radiation_parameters
+                {% endif %}
                 ancil_lct => regrid_seaice_reynolds
                 ancil_lct => regrid_SST_reynolds
-                (ancil_river_routing_preproc & ancil_lct) => ancil_river_routing
-                ancil_river_routing => ancil_river_storage_preproc => ancil_river_storage
+                {% if PREPROCESSING %}
+                    (ancil_river_routing_preproc & ancil_lct) => ancil_river_routing
+                    ancil_river_routing => ancil_river_storage_preproc => ancil_river_storage
+                {% else %}
+                    (setup_preproc_symlink & ancil_lct) => ancil_river_routing
+                    ancil_river_routing => ancil_river_storage
+                {% endif %}
         {% endif %}
 		"""
 
@@ -66,6 +92,10 @@
 			ANCIL_TARGET_PATH="/scratch/${PROJECT}/${USER}/cylc-run/${CYLC_SUITE_NAME}/share/data"
 			ANCIL_MASTER="/g/data/access/TIDS/UM/ancil"
 			ANCIL_PREPROC_PATH="/g/data/access/TIDS/RMED/ANTS/preproc"
+			PREPROCESSING={{ PREPROCESSING }}
+			{% if not PREPROCESSING %}
+				PREPROC_DIRECTORY={{ PREPROC_DIRECTORY }}
+			{% endif %}
 			CALENDAR={{ CALENDAR }}
 			RESOLUTION={{ RESOLUTION }}
             VERTICAL_DISCRETIZATION={{ VERTICAL_DISCRETIZATION }}
@@ -109,9 +139,26 @@
                 [[[environment]]]
                         OCEAN_MESH = {{ GRID_FILE }}
 
+    {% if PREPROCESSING %}
     [[preprocess_CCI_water]]
         script = rose task-run
         inherit = PBS_very_parallel
+    {% else %}
+    [[setup_preproc_symlink]]
+        script = """
+			rm -rf "${ANCIL_TARGET_PATH}/preproc"
+			mkdir -p "${ANCIL_TARGET_PATH}/preproc"
+			for f in orog_formdrag_preproc.ash.nc \
+						ESACCI-LCCS-and-Water-Bodies.nc \
+						qrclim.pre_aerosols.nc \
+						qrparm.orog_filtered_preproc.nc \
+						qrparm.orog_unfiltered_preproc.nc \
+						trip_routing_data.nc \
+						fekete_storage_data.nc; do
+				ln -sfn "${PREPROC_DIRECTORY}/${f}" "${ANCIL_TARGET_PATH}/preproc/"
+			done
+        """
+    {% endif %}
  
 	[[ancil_lct]]
 		{% if GRID_SOURCE == "land_cover" %}
@@ -220,6 +267,7 @@
 		inherit = PBS_medium_serial
 		script = rose task-run
 
+	{% if PREPROCESSING %}
 	[[ancil_orographic_formdrag_preproc]]
 		inherit = PBS_medium_parallel
 		script = rose task-run
@@ -231,6 +279,7 @@
 	[[ancil_orography_unfiltered_preproc]]
 		inherit = PBS_huge_parallel
 		script = rose task-run
+	{% endif %}
 
 	[[ancil_orography_mean]]
 		inherit = PBS_medium_parallel
@@ -244,6 +293,7 @@
 		inherit = PBS_small_serial
 		script = rose task-run
 
+	{% if PREPROCESSING %}
 	[[ancil_aeroclim_preproc]]
 		inherit = PBS_medium_parallel
 		script = rose task-run
@@ -254,6 +304,7 @@
 		"""
 		[[[environment]]]
 			CALENDAR = {{ CALENDAR }}
+	{% endif %}
 
 	[[regrid_aerosol]]
 		inherit = PBS_large_parallel
@@ -271,7 +322,7 @@
         inherit = PBS_medium_parallel
         script = rose task-run
 
-    [[regrid_ofcc_aerosol]]
+    [[regrid_ocff_aerosol]]
         inherit = PBS_medium_parallel
         script = rose task-run
 
@@ -311,17 +362,21 @@
 		inherit = PBS_large_parallel
 		script = rose task-run
 
+	{% if PREPROCESSING %}
 	[[ancil_river_routing_preproc]]
 		inherit = PBS_small_serial
 		script = rose task-run
+	{% endif %}
 
 	[[ancil_river_routing]]
 		inherit = PBS_small_serial
 		script = rose task-run
 	
+	{% if PREPROCESSING %}
 	[[ancil_river_storage_preproc]]
 		inherit = PBS_small_serial
 		script = rose task-run
+	{% endif %}
 
 	[[ancil_river_storage]]
 		inherit = PBS_small_serial
