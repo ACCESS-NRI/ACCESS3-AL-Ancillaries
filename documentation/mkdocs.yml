@@ -9,15 +9,15 @@
 # - MkDocs configuration guide: https://www.mkdocs.org/user-guide/configuration/
 # ============================================== #
 
-site_name: CCI-Ancillary-Suite # MODIFY: Set the site name for your documentation
+site_name: access3-al-ancillaries # MODIFY: Set the site name for your documentation
 
 # Site URL
 site_url: !ENV [READTHEDOCS_CANONICAL_URL, ""]
 # READTHEDOCS_CANONICAL_URL is set within the ReadTheDocs build
 
 # Git repository (Adds a link to the GitHub repository at the top)
-repo_url: https://github.com/ACCESS-NRI/CCI-Ancillary-Suite # MODIFY: Set the GitHub repository URL for your documentation
-repo_name: CCI-Ancillary-Suite # MODIFY: Set the GitHub repository name for your documentation
+repo_url: https://github.com/ACCESS-NRI/ACCESS3-AL-Ancillaries # MODIFY: Set the GitHub repository URL for your documentation
+repo_name: ACCESS3-AL-Ancillaries # MODIFY: Set the GitHub repository name for your documentation
 
 edit_uri: edit/main/documentation/docs # MODIFY: If your documentation is in a different branch than `main` or folder (documentation/docs), update this path accordingly
 
