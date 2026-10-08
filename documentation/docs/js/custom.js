@@ -341,7 +341,7 @@ function makeCitationLinks() {
 }
 
 /*
-  Make diagrams inside a '.zoomable-diagram' container zoomable (buttons, Ctrl/Cmd + scroll), with a fullscreen toggle
+  Make diagrams inside a '.zoomable-diagram' container zoomable (buttons or mouse scroll), with a fullscreen toggle
   and pannable (click and drag, or scroll). Mermaid renders into a closed shadow root, so the
   diagram is zoomed by resizing its host element, which the diagram then scales to fit.
 */
@@ -390,11 +390,14 @@ function makeDiagramsZoomable() {
     });
     container.appendChild(controls);
 
+    // Scrolling over the diagram zooms it. Once fully zoomed out, scrolling down falls through
+    // to the page so the diagram never traps the scroll position.
     viewport.addEventListener('wheel', event => {
-      if (!(event.ctrlKey || event.metaKey)) return;
+      const zoomingIn = event.deltaY < 0;
+      if (!zoomingIn && zoom === minZoom) return;
       event.preventDefault();
       const box = viewport.getBoundingClientRect();
-      applyZoom(zoom * (event.deltaY < 0 ? zoomStep : 1 / zoomStep), event.clientX - box.left, event.clientY - box.top);
+      applyZoom(zoom * (zoomingIn ? zoomStep : 1 / zoomStep), event.clientX - box.left, event.clientY - box.top);
     }, { passive: false });
 
     let dragStart = null;
