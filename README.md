@@ -4,10 +4,6 @@
 
 A [Cylc8](https://cylc.github.io/cylc-doc/stable/html/index.html) workflow, utilising the [Rose plugin](https://metomi.github.io/rose/doc/html/index.html), for generating ancillaries for land and atmosphere land models, targeting ACCESS3 models e.g. CABLE, ACCESS-AM3. Based on the 300m resolution CCI Land Cover dataset.
 
-## Usage
-
-Configure the workflow by modifying the `rose-suite.conf` file. The top level configuration options are described in the [Configuration][#top-level-configuration] section below. The workflow by default runs and uses storage under the user's default project `$PROJECT`. The working directory is `/scratch/<project>/<user>/cylc-run/CCI-Ancillary-Suite/<runID>/`, with the output data located in that directory under `share/data`.
-
 ## Requirements
 
 To run the suite on Gadi, membership is required to the following projects:
