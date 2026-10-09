@@ -40,7 +40,17 @@ For more information about the tasks that makes up the workflow, see the [apps](
 The workflow is run with Cylc8. After setting the configurable options, run the workflow with
 
 ```
-cylc vip --run-name=<some_descriptive_name>
+cylc vip --run-name=<name>
 ```
 
 The `--run-name` is not required, but highly recommended as it makes it significantly easier to keep track of things when you've generated many sets of ancillaries. The cylc working directory is `/scratch/${PROJECT}/${USER}/cylc-run/CCI-Ancillary-Suite/<some_descriptive_name>` (on Gadi- this is configured centrally, so may vary from machine to machine). The outputs are written to `share/data` in the working directory. The output ancillaries are split by category in a hopefully logical basis, with the `preproc` directory containing files that were created during the workflow, but not required for the model runs.
+
+### Other useful commands
+
+* `cylc graph ACCESS3-AL-Ancillaries/<name>`: View the graph generated for your specific configuration.
+* `cylc tui ACCESS3-AL-Ancillaries/<name>`: View the state of the workflow, trigger or stop tasks, view logs etc.
+* `cylc vr ACCESS3-AL-Ancillaries/<name>`: Reinstall the workflow, pulling in any changes made since last install.
+* `cylc stop ACCESS3-AL-Ancillaries/<name>`: Stop the workflow.
+* `cylc clean ACCESS3-AL-Ancillaries/<name>`: Remove the workflow after it's finished or stopped.
+
+See the [Cylc7 to Cylc8 cheat sheet](https://cylc.github.io/cylc-doc/stable/html/7-to-8/cheat-sheet.html) for a quick run down of the commands.
