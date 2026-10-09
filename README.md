@@ -25,4 +25,4 @@ After cloning the workflow, the workflow can be run with:
 cylc vip
 ```
 
-This will the run the default configuration, which generates global land and atmosphere ancillaries with a land mask based off an OM3 mesh for the CABLE land surface model using your default `${PROJECT}`. For more detailed information about the workflow, see the [documentation](https://access3-al-ancillaries.readthedocs.io/en/latest/).
+This will the run the default configuration, which generates global land and atmosphere ancillaries with a land mask based off an OM3 mesh for the CABLE land surface model using your default `${PROJECT}`. For more detailed information about the workflow, see the [documentation](https://access3-al-ancillaries.readthedocs.io).
