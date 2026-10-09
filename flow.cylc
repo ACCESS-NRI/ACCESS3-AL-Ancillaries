@@ -2,16 +2,19 @@
 {% include "task_resources.cylc" %}
 
 [meta]
-	title = "CCI Ancillary Suite"
-	description = "Create a set of ancillaries using CCI Land Cover as the primary data source."
+    title = "CCI Ancillary Suite"
+    description = "Create a set of ancillaries using CCI Land Cover as the primary data source."
 
 [scheduling]
-	[[graph]]
-		R1 = """
-			{% if GRID_SOURCE == "ocean_mesh" %}
-				landseamask_from_ocean_mesh => ancil_lct
+    [[graph]]
+        R1 = """
+            {% if GRID_SOURCE == "ocean_mesh" %}
+                (landseamask_from_ocean_mesh & preprocess_CCI_water) => ancil_lct
+            {% elif GRID_SOURCE == "land_fractions" %}
+                (landseamask_from_land_fractions & preprocess_CCI_water) => ancil_lct
+			{% else %}
+				preprocess_CCI_water => ancil_lct
 			{% endif %}
-			preprocess_CCI_water => ancil_lct
 			ancil_lct => regrid_ncar_lulcc
 			ancil_lct => ancil_fix_antarctic_permanent_ice
 			(ancil_fix_antarctic_permanent_ice & regrid_ncar_lulcc) => ancil_split_grass_types
@@ -29,7 +32,7 @@
                 {% if SOIL_INIT_CONDS_METHOD == "functional" %}
                     ancil_soil_hydrology => functional_soil_initial_conditions
                 {% else %}
-				    {{ raise("Invalid SOIL_INIT_CONDS_METHOD: " ~ LAND_MODEL) }}
+                    {{ raise("Invalid SOIL_INIT_CONDS_METHOD: " ~ LAND_MODEL) }}
                 {% endif %}
             {% endif %}
             {% if ATMOSPHERE_ANCILLARIES %}
@@ -57,207 +60,215 @@
                 (ancil_river_routing_preproc & ancil_lct) => ancil_river_routing
                 ancil_river_routing => ancil_river_storage_preproc => ancil_river_storage
         {% endif %}
-		"""
+        """
 
 [runtime]
-	[[root]]
-		init-script = """
-			module use /g/data/xp65/public/modules
-			module load conda/analysis3-25.08
-			module load nco
-		"""
+    [[root]]
+        init-script = """
+            module use /g/data/xp65/public/modules
+            module load conda/analysis3-25.08
+            module load nco
+        """
         execution retry delays = 3*PT2M
-		[[[environment]]]
-			ANCIL_TARGET_PATH="/scratch/${PROJECT}/${USER}/cylc-run/${CYLC_SUITE_NAME}/share/data"
-			ANCIL_MASTER="/g/data/access/TIDS/UM/ancil"
-			ANCIL_PREPROC_PATH="/g/data/access/TIDS/RMED/ANTS/preproc"
-			CALENDAR={{ CALENDAR }}
-			RESOLUTION={{ RESOLUTION }}
+        [[[environment]]]
+            ANCIL_TARGET_PATH="/scratch/${PROJECT}/${USER}/cylc-run/${CYLC_SUITE_NAME}/share/data"
+            ANCIL_MASTER="/g/data/access/TIDS/UM/ancil"
+            ANCIL_PREPROC_PATH="/g/data/access/TIDS/RMED/ANTS/preproc"
+            CALENDAR={{ CALENDAR }}
+            RESOLUTION={{ RESOLUTION }}
             VERTICAL_DISCRETIZATION={{ VERTICAL_DISCRETIZATION }}
             GRID_FILE={{ GRID_FILE }}
             {% if GRID_SOURCE == "land_sea_mask" %}
                 TARGET_LSM={{ GRID_FILE }}
             {% else %}
-			    TARGET_LSM=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask
+                TARGET_LSM=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask
             {% endif %}
             TARGET_OCEAN=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask_sea
-			TARGET_OROGRAPHIC_LSM=${ANCIL_TARGET_PATH}/orography/qrparm.orog_wavedrag
+            TARGET_OROGRAPHIC_LSM=${ANCIL_TARGET_PATH}/orography/qrparm.orog_wavedrag
             CCI_YEAR={{ CCI_YEAR }}
-			BEGIN_YEAR={{ BEGIN_YEAR }}
-			END_YEAR={{ END_YEAR }}
-			{% if LAND_MODEL == "CABLE" %}
-				MODEL_ICE_TILE = 17
-				MODEL_SOIL_TILE = 14
-				MODEL_C3_GRASS_TILE = 6
-				MODEL_C4_GRASS_TILE = 7
-				MODEL_TREE_TILES = "1,2,3,4"
+            BEGIN_YEAR={{ BEGIN_YEAR }}
+            END_YEAR={{ END_YEAR }}
+            {% if LAND_MODEL == "CABLE" %}
+                MODEL_ICE_TILE = 17
+                MODEL_SOIL_TILE = 14
+                MODEL_C3_GRASS_TILE = 6
+                MODEL_C4_GRASS_TILE = 7
+                MODEL_TREE_TILES = "1,2,3,4"
                 SOIL_THICKNESS = "0.022,0.058,0.154,0.409,1.085,2.872"
                 MOISTURE_UNITS = "volumetric"
-			{% elif LAND_MODEL == "JULES" %}
-				MODEL_ICE_TILE = 9
-				MODEL_SOIL_TILE = 8
-				MODEL_C3_GRASS_TILE = 3
-				MODEL_C4_GRASS_TILE = 4
-				MODEL_TREE_TILES = "1,2"
+            {% elif LAND_MODEL == "JULES" %}
+                MODEL_ICE_TILE = 9
+                MODEL_SOIL_TILE = 8
+                MODEL_C3_GRASS_TILE = 3
+                MODEL_C4_GRASS_TILE = 4
+                MODEL_TREE_TILES = "1,2"
                 SOIL_THICKNESS = "0.1,0.25,0.65,2.0"
                 MOISTURE_UNITS = "mass"
-			{% else %}
-				{{ raise("Invalid LAND_MODEL: " ~ LAND_MODEL) }}
-			{% endif %}	
+            {% else %}
+                {{ raise("Invalid LAND_MODEL: " ~ LAND_MODEL) }}
+            {% endif %}    
 
-	[[landseamask_from_ocean_mesh]]
-		script = rose task-run
-		inherit = PBS_small_serial
+    [[landseamask_from_ocean_mesh]]
+        script = rose task-run
+        inherit = PBS_small_serial
                 [[[environment]]]
                         OCEAN_MESH = {{ GRID_FILE }}
+
+    [[landseamask_from_land_fractions]]
+        script = rose task-run
+        inherit = PBS_small_serial
+                [[[environment]]]
+                        LAND_FRACTIONS = {{ GRID_FILE }}
 
     [[preprocess_CCI_water]]
         script = rose task-run
         inherit = PBS_very_parallel
  
-	[[ancil_lct]]
-		{% if GRID_SOURCE == "land_cover" %}
-			script = rose task-run --command-key=grid_source
-		{% elif GRID_SOURCE == "land_sea_mask" %}
-			script = rose task-run --command-key=lsm_source
-		{% elif GRID_SOURCE == "ocean_mesh" %}
-			script = rose task-run --command-key=lsm_source
-		{% endif %}
-		inherit = PBS_medium_parallel
-		init-script = """
-			module use /g/data/access/ngm/modules
-			module load ants/1.1.0
-		"""
-		[[[environment]]]
-			{% if LAND_MODEL == "CABLE" %}
-				DEFAULT_TRANSFORM = "cci2cable.json"
-				{% if URBAN %}
-					DEFAULT_TRANSFORM = "cci2cable_urban.json"
-				{% endif %}
-			{% elif LAND_MODEL == "JULES" %}
-				DEFAULT_TRANSFORM = "cci2jules.json"
-			{% endif %}
+    [[ancil_lct]]
+        {% if GRID_SOURCE == "land_cover" %}
+            script = rose task-run --command-key=grid_source
+        {% elif GRID_SOURCE == "land_fractions" %}
+            script = rose task-run --command-key=grid_source
+        {% elif GRID_SOURCE == "land_sea_mask" %}
+            script = rose task-run --command-key=lsm_source
+        {% elif GRID_SOURCE == "ocean_mesh" %}
+            script = rose task-run --command-key=lsm_source
+        {% endif %}
+        inherit = PBS_medium_parallel
+        init-script = """
+            module use /g/data/access/ngm/modules
+            module load ants/1.1.0
+        """
+        [[[environment]]]
+            {% if LAND_MODEL == "CABLE" %}
+                DEFAULT_TRANSFORM = "cci2cable.json"
+                {% if URBAN %}
+                    DEFAULT_TRANSFORM = "cci2cable_urban.json"
+                {% endif %}
+            {% elif LAND_MODEL == "JULES" %}
+                DEFAULT_TRANSFORM = "cci2jules.json"
+            {% endif %}
 
-	[[regrid_C4_fraction]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[regrid_C4_fraction]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[ancil_C4_fraction]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[ancil_C4_fraction]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
     [[ancil_fix_antarctic_permanent_ice]]
         inherit = PBS_medium_serial
         script = rose task-run
 
-	[[regrid_ncar_lulcc]]
-		inherit = PBS_medium_serial
-		script = rose task-run
+    [[regrid_ncar_lulcc]]
+        inherit = PBS_medium_serial
+        script = rose task-run
 
-	[[ancil_split_grass_types]]
-		inherit = PBS_medium_serial
-		script = rose task-run
-		[[[environment]]]
-			{% if LAND_MODEL == "CABLE" %}
-				GRASS_MAPPING = "ncar_grass_cable.json"
-			{% elif LAND_MODEL == "JULES" %}
-				GRASS_MAPPING = "ncar_grass_jules.json"
-			{% endif %}
+    [[ancil_split_grass_types]]
+        inherit = PBS_medium_serial
+        script = rose task-run
+        [[[environment]]]
+            {% if LAND_MODEL == "CABLE" %}
+                GRASS_MAPPING = "ncar_grass_cable.json"
+            {% elif LAND_MODEL == "JULES" %}
+                GRASS_MAPPING = "ncar_grass_jules.json"
+            {% endif %}
 
-	[[regrid_LAI]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[regrid_LAI]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[ancil_LAI]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
-		[[[environment]]]
-			{% if LAND_MODEL == "CABLE" %}
-				DEFAULT_WEIGHTS = "lai_weights_cable.json"
-			{% elif LAND_MODEL == "JULES" %}
-				DEFAULT_WEIGHTS = "lai_weights_jules.json"
-			{% endif %}
+    [[ancil_LAI]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
+        [[[environment]]]
+            {% if LAND_MODEL == "CABLE" %}
+                DEFAULT_WEIGHTS = "lai_weights_cable.json"
+            {% elif LAND_MODEL == "JULES" %}
+                DEFAULT_WEIGHTS = "lai_weights_jules.json"
+            {% endif %}
 
-	[[ancil_canopy_height]]
-		inherit = PBS_large_serial
-		script = rose task-run
-		[[[environment]]]
-			{% if LAND_MODEL == "CABLE" %}
-				DEFAULT_HEIGHT_FACTORS = "canopy_height_factors_cable.json"
-			{% elif LAND_MODEL == "JULES" %}
-				DEFAULT_HEIGHT_FACTORS = "canopy_height_factors_jules.json"
-			{% endif %}
+    [[ancil_canopy_height]]
+        inherit = PBS_large_serial
+        script = rose task-run
+        [[[environment]]]
+            {% if LAND_MODEL == "CABLE" %}
+                DEFAULT_HEIGHT_FACTORS = "canopy_height_factors_cable.json"
+            {% elif LAND_MODEL == "JULES" %}
+                DEFAULT_HEIGHT_FACTORS = "canopy_height_factors_jules.json"
+            {% endif %}
 
-	[[merge_veg_func]]
-		inherit = PBS_medium_serial
-		script = rose task-run
+    [[merge_veg_func]]
+        inherit = PBS_medium_serial
+        script = rose task-run
 
-	[[ancil_soil_hydrology]]
-		inherit = PBS_long_parallel
-		script = rose task-run
+    [[ancil_soil_hydrology]]
+        inherit = PBS_long_parallel
+        script = rose task-run
 
     [[functional_soil_initial_conditions]]
         inherit = PBS_medium_parallel
         script = rose task-run
 
-	[[ancil_topographic_index]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[ancil_topographic_index]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[ancil_soil_albedo]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[ancil_soil_albedo]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[merge_soils]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[merge_soils]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[ancil_soil_dust]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[ancil_soil_dust]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[ancil_soil_roughness]]
-		inherit = PBS_medium_serial
-		script = rose task-run
+    [[ancil_soil_roughness]]
+        inherit = PBS_medium_serial
+        script = rose task-run
 
-	[[ancil_orographic_formdrag_preproc]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[ancil_orographic_formdrag_preproc]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[ancil_orography_filtered_preproc]]
-		inherit = PBS_large_parallel
-		script = rose task-run
+    [[ancil_orography_filtered_preproc]]
+        inherit = PBS_large_parallel
+        script = rose task-run
 
-	[[ancil_orography_unfiltered_preproc]]
-		inherit = PBS_huge_parallel
-		script = rose task-run
+    [[ancil_orography_unfiltered_preproc]]
+        inherit = PBS_huge_parallel
+        script = rose task-run
 
-	[[ancil_orography_mean]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[ancil_orography_mean]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[ancil_orographic_formdrag]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[ancil_orographic_formdrag]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[ancil_orographic_wavedrag]]
-		inherit = PBS_small_serial
-		script = rose task-run
+    [[ancil_orographic_wavedrag]]
+        inherit = PBS_small_serial
+        script = rose task-run
 
-	[[ancil_aeroclim_preproc]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
-		init-script = """
-			module use /g/data/access/ngm/modules
-			module load ants/1.2.0
+    [[ancil_aeroclim_preproc]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
+        init-script = """
+            module use /g/data/access/ngm/modules
+            module load ants/1.2.0
             module load nco
-		"""
-		[[[environment]]]
-			CALENDAR = {{ CALENDAR }}
+        """
+        [[[environment]]]
+            CALENDAR = {{ CALENDAR }}
 
-	[[regrid_aerosol]]
-		inherit = PBS_large_parallel
-		script = rose task-run
+    [[regrid_aerosol]]
+        inherit = PBS_large_parallel
+        script = rose task-run
 
     [[regrid_seasalt_aerosol]]
         inherit = PBS_medium_parallel
@@ -287,42 +298,42 @@
         inherit = PBS_medium_parallel
         script = rose task-run
 
-	[[regrid_ozone]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[regrid_ozone]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[ancil_radiation_parameters]]
-		inherit = PBS_medium_parallel
-		script = rose task-run
+    [[ancil_radiation_parameters]]
+        inherit = PBS_medium_parallel
+        script = rose task-run
 
-	[[ancil_clim_dms]]
-		inherit = PBS_medium_serial
-		script = rose task-run
+    [[ancil_clim_dms]]
+        inherit = PBS_medium_serial
+        script = rose task-run
 
-	[[ancil_clim_sea]]
-		inherit = PBS_medium_serial
-		script = rose task-run
+    [[ancil_clim_sea]]
+        inherit = PBS_medium_serial
+        script = rose task-run
 
-	[[regrid_seaice_reynolds]]
-		inherit = PBS_large_parallel
-		script = rose task-run
+    [[regrid_seaice_reynolds]]
+        inherit = PBS_large_parallel
+        script = rose task-run
 
-	[[regrid_SST_reynolds]]
-		inherit = PBS_large_parallel
-		script = rose task-run
+    [[regrid_SST_reynolds]]
+        inherit = PBS_large_parallel
+        script = rose task-run
 
-	[[ancil_river_routing_preproc]]
-		inherit = PBS_small_serial
-		script = rose task-run
+    [[ancil_river_routing_preproc]]
+        inherit = PBS_small_serial
+        script = rose task-run
 
-	[[ancil_river_routing]]
-		inherit = PBS_small_serial
-		script = rose task-run
-	
-	[[ancil_river_storage_preproc]]
-		inherit = PBS_small_serial
-		script = rose task-run
+    [[ancil_river_routing]]
+        inherit = PBS_small_serial
+        script = rose task-run
+    
+    [[ancil_river_storage_preproc]]
+        inherit = PBS_small_serial
+        script = rose task-run
 
-	[[ancil_river_storage]]
-		inherit = PBS_small_serial
-		script = rose task-run
+    [[ancil_river_storage]]
+        inherit = PBS_small_serial
+        script = rose task-run
