@@ -74,17 +74,26 @@
             ANCIL_TARGET_PATH="/scratch/${PROJECT}/${USER}/cylc-run/${CYLC_SUITE_NAME}/share/data"
             ANCIL_MASTER="/g/data/access/TIDS/UM/ancil"
             ANCIL_PREPROC_PATH="/g/data/access/TIDS/RMED/ANTS/preproc"
-            CALENDAR={{ CALENDAR }}
-            RESOLUTION={{ RESOLUTION }}
-            VERTICAL_DISCRETIZATION={{ VERTICAL_DISCRETIZATION }}
-            GRID_FILE={{ GRID_FILE }}
+
+            # Define required variables for the desired grid source
             {% if GRID_SOURCE == "land_sea_mask" %}
-                TARGET_LSM={{ GRID_FILE }}
-            {% else %}
+                TARGET_LSM={{ LAND_SEA_MASK }}
+            {% elif GRID_SOURCE == "land_cover" %}
+                GRID_NAMELIST={{ GRID_NAMELIST }}
+                TARGET_LSM=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask
+            {% elif GRID_SOURCE == "ocean_mesh" %}
+                OCEAN_MESH={{ OCEAN_MESH }}
+                RESOLUTION={{ RESOLUTION }}
+                TARGET_LSM=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask
+            {% elif GRID_SOURCE == "land_fractions" %}
+                LAND_FRACTIONS = {{ LAND_FRACTIONS }}
                 TARGET_LSM=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask
             {% endif %}
+
+            VERTICAL_DISCRETIZATION={{ VERTICAL_DISCRETIZATION }}
             TARGET_OCEAN=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask_sea
             TARGET_OROGRAPHIC_LSM=${ANCIL_TARGET_PATH}/orography/qrparm.orog_wavedrag
+            CALENDAR={{ CALENDAR }}
             CCI_YEAR={{ CCI_YEAR }}
             BEGIN_YEAR={{ BEGIN_YEAR }}
             END_YEAR={{ END_YEAR }}
@@ -111,14 +120,10 @@
     [[landseamask_from_ocean_mesh]]
         script = rose task-run
         inherit = PBS_small_serial
-                [[[environment]]]
-                        OCEAN_MESH = {{ GRID_FILE }}
 
     [[landseamask_from_land_fractions]]
         script = rose task-run
         inherit = PBS_small_serial
-                [[[environment]]]
-                        LAND_FRACTIONS = {{ GRID_FILE }}
 
     [[preprocess_CCI_water]]
         script = rose task-run
