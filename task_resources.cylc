@@ -74,7 +74,7 @@
             -l jobfs=150GB
             -l storage=gdata/hr22+gdata/xp65+gdata/vk83+gdata/access+gdata/{{ COMPUTE_PROJECT}}+scratch/{{ COMPUTE_PROJECT }}+scratch/{{ environ['PROJECT'] }}
   
-    [[PBS_huge_parallel]]
+    [[PBS_huge_serial]]
         platform = pbs
         [[[directives]]]
             -q = hugemem

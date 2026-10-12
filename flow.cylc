@@ -133,7 +133,7 @@
         {% if GRID_SOURCE == "land_cover" %}
             script = rose task-run --command-key=grid_source
         {% elif GRID_SOURCE == "land_fractions" %}
-            script = rose task-run --command-key=grid_source
+            script = rose task-run --command-key=lsm_source
         {% elif GRID_SOURCE == "land_sea_mask" %}
             script = rose task-run --command-key=lsm_source
         {% elif GRID_SOURCE == "ocean_mesh" %}
@@ -241,11 +241,11 @@
         script = rose task-run
 
     [[ancil_orography_filtered_preproc]]
-        inherit = PBS_large_parallel
+        inherit = PBS_huge_serial
         script = rose task-run
 
     [[ancil_orography_unfiltered_preproc]]
-        inherit = PBS_huge_parallel
+        inherit = PBS_huge_serial
         script = rose task-run
 
     [[ancil_orography_mean]]
