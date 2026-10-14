@@ -17,7 +17,6 @@
     {'key': 'c4-fraction', 'graph': 'regrid_C4_fraction => ancil_C4_fraction'},
     {'key': 'fix-antarctic-permanent-ice', 'graph': 'ancil_fix_antarctic_permanent_ice'},
     {'key': 'split-grass-types', 'graph': 'regrid_ncar_lulcc => ancil_split_grass_types'},
-    {'key': 'min-tile-fraction', 'graph': 'ancil_min_tile_fraction'},
 ] %}
 
 {% set VEGFRAC_CHAIN = ['ancil_lct'] %}
@@ -211,10 +210,6 @@
             {% elif LAND_MODEL == "JULES" %}
                 GRASS_MAPPING = "ncar_grass_jules.json"
             {% endif %}
-
-	[[ancil_min_tile_fraction]]
-		inherit = PBS_medium_serial
-		script = rose task-run
 
 	[[regrid_LAI]]
 		inherit = PBS_medium_parallel
