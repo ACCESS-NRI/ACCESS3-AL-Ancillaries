@@ -79,6 +79,7 @@ nav:
     - regrid_seasalt_aerosol: pages/apps/regrid_seasalt_aerosol.md
     - regrid_SST_reynolds: pages/apps/regrid_SST_reynolds.md
     - regrid_sulp_aerosol: pages/apps/regrid_sulp_aerosol.md
+    - vegfrac_postproc: pages/apps/vegfrac_postproc.md
   # ...
 
 
