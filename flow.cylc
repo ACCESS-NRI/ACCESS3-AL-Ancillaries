@@ -6,24 +6,26 @@
     in rose-meta.conf. ancil_lct and every post-processing app read and
     overwrite the same vegetation/qrparm.veg.frac ancillary in place (each
     app also keeps a snapshot of its output in preproc for traceability- see
-    the apps' own rose-app.conf), so any selected subset can be chained with
-    a plain "=>" without flow.cylc needing to know about file names. Selected
-    steps always run in the fixed order listed here, regardless of the order
-    they were selected in. Each step's 'graph' is the cylc graph text for
+    the apps' own rose-app.conf), so any selected steps can be chained in any
+    order with a plain "=>" without flow.cylc needing to know about file
+    names. Selected steps run in the order they are listed in
+    LAND_COVER_PREPROCESSING. Each step's value is the cylc graph text for
     that step alone (including any one-off prep task it needs, e.g.
     regridding an external source onto the target grid).
 #}
-{% set VEGFRAC_STEPS = [
-    {'key': 'c4-fraction', 'graph': 'regrid_C4_fraction => ancil_C4_fraction'},
-    {'key': 'fix-antarctic-permanent-ice', 'graph': 'ancil_fix_antarctic_permanent_ice'},
-    {'key': 'split-grass-types', 'graph': 'regrid_ncar_lulcc => ancil_split_grass_types'},
-] %}
+{% set VEGFRAC_STEPS = {
+    'c4-fraction': 'regrid_C4_fraction => ancil_C4_fraction',
+    'fix-antarctic-permanent-ice': 'ancil_fix_antarctic_permanent_ice',
+    'split-grass-types': 'regrid_ncar_lulcc => ancil_split_grass_types',
+    'min-tile-fraction': 'ancil_min_tile_fraction',
+} %}
 
 {% set VEGFRAC_CHAIN = ['ancil_lct'] %}
-{% for step in VEGFRAC_STEPS %}
-    {% if step.key in LAND_COVER_PREPROCESSING %}
-        {% set _ = VEGFRAC_CHAIN.append(step.graph) %}
+{% for step_key in LAND_COVER_PREPROCESSING %}
+    {% if step_key not in VEGFRAC_STEPS %}
+        {{ raise("Invalid LAND_COVER_PREPROCESSING step: " ~ step_key) }}
     {% endif %}
+    {% set _ = VEGFRAC_CHAIN.append(VEGFRAC_STEPS[step_key]) %}
 {% endfor %}
 {% set _ = VEGFRAC_CHAIN.append('vegfrac_postproc') %}
 
@@ -43,6 +45,7 @@
 			{% endif %}
 			preprocess_CCI_water => ancil_lct
 			{{ VEGFRAC_CHAIN | join(' => ') }}
+			ancil_lct => vegfrac_postproc
 			ancil_lct => regrid_LAI
 			(vegfrac_postproc & regrid_LAI) => ancil_LAI
 			ancil_LAI => ancil_canopy_height
@@ -194,6 +197,10 @@
         script = rose task-run
 
     [[ancil_fix_antarctic_permanent_ice]]
+        inherit = PBS_medium_serial
+        script = rose task-run
+
+    [[ancil_min_tile_fraction]]
         inherit = PBS_medium_serial
         script = rose task-run
 

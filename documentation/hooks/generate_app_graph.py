@@ -4,7 +4,8 @@ The `<!-- app-graph -->` placeholder in `pages/apps/index.md` is replaced at bui
 graph generated from the `[[graph]]` section of the repository's `flow.cylc`. The file is parsed
 directly (the Jinja2 is not rendered), so apps which are only included under an `{% if %}` are
 drawn inside a dashed box labelled with the condition. Every app with an `app/<name>/README.md`
-is hyperlinked to its docs page. No Cylc or Rose installation is required.
+is hyperlinked to its docs page, as is any task with its own section page at
+`pages/apps/<name>/index.md` (e.g. `vegfrac_postproc`). No Cylc or Rose installation is required.
 """
 import re
 from pathlib import Path
@@ -130,13 +131,15 @@ def render_mermaid_graph(edges, task_conditions, documented_apps):
     )
 
 
-def find_documented_apps(app_directory):
-    return {readme.parent.name for readme in app_directory.glob("*/README.md")}
+def find_documented_apps(app_directory, section_page_directory):
+    app_pages = {readme.parent.name for readme in app_directory.glob("*/README.md")}
+    section_pages = {index.parent.name for index in section_page_directory.glob("*/index.md")}
+    return app_pages | section_pages
 
 
-def generate_graph_block(flow_file, app_directory):
+def generate_graph_block(flow_file, app_directory, section_page_directory):
     edges, mentions = parse_conditional_edges(extract_graph_lines(flow_file.read_text()))
-    graph = render_mermaid_graph(edges, assign_task_conditions(mentions), find_documented_apps(app_directory))
+    graph = render_mermaid_graph(edges, assign_task_conditions(mentions), find_documented_apps(app_directory, section_page_directory))
     return f'<div class="zoomable-diagram" markdown>\n\n```mermaid\n{graph}\n```\n\n</div>'
 
 
@@ -144,5 +147,9 @@ def on_page_markdown(markdown, *, page, config, files):
     if page.file.src_uri != LANDING_PAGE_SOURCE:
         return markdown
     repository_root = Path(config.config_file_path).resolve().parents[1]
-    graph_block = generate_graph_block(repository_root / "flow.cylc", repository_root / "app")
+    graph_block = generate_graph_block(
+        repository_root / "flow.cylc",
+        repository_root / "app",
+        Path(config.docs_dir) / "pages" / "apps",
+    )
     return markdown.replace(PLACEHOLDER, graph_block)
