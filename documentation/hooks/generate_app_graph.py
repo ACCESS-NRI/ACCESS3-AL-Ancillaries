@@ -3,8 +3,8 @@
 The `<!-- app-graph -->` placeholder in `pages/apps/index.md` is replaced at build time with a
 graph generated from the `[[graph]]` section of the repository's `flow.cylc`. The file is parsed
 directly (the Jinja2 is not rendered), so apps which are only included under an `{% if %}` are
-drawn inside a dashed box labelled with the condition. Every app with an `app/<name>/README.md`
-is hyperlinked to its docs page. No Cylc or Rose installation is required.
+drawn inside a dashed box labelled with the condition. Every task with a page in `pages/apps/`
+(an app README, or a hand-written page such as `vegfrac_postproc`) is hyperlinked to its docs page. No Cylc or Rose installation is required.
 """
 import re
 from pathlib import Path
@@ -14,6 +14,14 @@ PLACEHOLDER = "<!-- app-graph -->"
 
 JINJA_BLOCK = re.compile(r"\{%-?\s*(if|elif|else|endif)\b\s*(.*?)\s*-?%\}")
 TASK_NAME = re.compile(r"[A-Za-z_]\w*")
+
+# Graph lines built by Jinja2 expressions can't be parsed, so the dependencies they always contain are
+# listed here instead. The vegfrac post-processing chain always runs from ancil_lct to vegfrac_postproc;
+# which optional steps sit in between depends on LAND_COVER_PREPROCESSING and is described on the
+# vegfrac_postproc page.
+RENDERED_GRAPH_LINES = {
+    "{{ VEGFRAC_CHAIN | join(' => ') }}": "ancil_lct => vegfrac_postproc",
+}
 
 def extract_graph_lines(flow_text):
     """Return the lines between the triple quotes of the first `[[graph]]` section."""
@@ -51,6 +59,7 @@ def parse_conditional_edges(graph_lines):
             else:
                 open_blocks.pop()
             continue
+        line = RENDERED_GRAPH_LINES.get(line.strip(), line)
         if "{{" in line:
             continue
         condition_path = tuple(open_blocks)
@@ -130,13 +139,13 @@ def render_mermaid_graph(edges, task_conditions, documented_apps):
     )
 
 
-def find_documented_apps(app_directory):
-    return {readme.parent.name for readme in app_directory.glob("*/README.md")}
+def find_documented_apps(app_pages_directory):
+    return {page.stem for page in app_pages_directory.glob("*.md") if page.stem != "index"}
 
 
-def generate_graph_block(flow_file, app_directory):
+def generate_graph_block(flow_file, app_pages_directory):
     edges, mentions = parse_conditional_edges(extract_graph_lines(flow_file.read_text()))
-    graph = render_mermaid_graph(edges, assign_task_conditions(mentions), find_documented_apps(app_directory))
+    graph = render_mermaid_graph(edges, assign_task_conditions(mentions), find_documented_apps(app_pages_directory))
     return f'<div class="zoomable-diagram" markdown>\n\n```mermaid\n{graph}\n```\n\n</div>'
 
 
@@ -144,5 +153,5 @@ def on_page_markdown(markdown, *, page, config, files):
     if page.file.src_uri != LANDING_PAGE_SOURCE:
         return markdown
     repository_root = Path(config.config_file_path).resolve().parents[1]
-    graph_block = generate_graph_block(repository_root / "flow.cylc", repository_root / "app")
+    graph_block = generate_graph_block(repository_root / "flow.cylc", Path(config.docs_dir) / "pages" / "apps")
     return markdown.replace(PLACEHOLDER, graph_block)

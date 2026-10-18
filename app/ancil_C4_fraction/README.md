@@ -16,7 +16,7 @@ where the input C3 grass fraction is assumed to represent the combined C3 and C4
 * `C4_SOURCE`: Regridded ISLSCP II C4 Vegetation Percentage source data, expressed as a percentage (converted to a fraction internally by dividing by 100).
 
 #### Outputs
-* `OUTPUT`: Path to write the output to, in UM PP format and also in NetCDF format.
+* `OUTPUT`: Path to write the output to, in UM PP format and also in NetCDF format. By default this is the same path as `VEGETATION_SOURCE`, so the app overwrites it in place- this lets `ancil_C4_fraction` be freely combined with the CCI-Ancillary-Suite's other `LAND_COVER_PREPROCESSING` steps regardless of which are selected. A copy of the NetCDF output is also written to `preproc/qrparm.veg.frac_ancil_C4_fraction.nc` for traceability.
 
 #### Parameters
 * `MODEL_C3_GRASS_TILE`: Index of the C3 grass class in the land cover type fraction dataset. Set in `flow.cylc` based on the specified land model.
