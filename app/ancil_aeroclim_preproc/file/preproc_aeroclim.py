@@ -12,6 +12,7 @@ import warnings
 
 import ants
 import cf_units
+import cftime
 import iris
 import iris.fileformats.pp
 import numpy as np
@@ -122,6 +123,48 @@ def time_mean(cube, gregorian=False):
     return mean
 
 
+def align_time_axis(cube):
+    """
+    Routine to reorder a monthly climatology so that it begins in January, with
+    all months in the first year of the dataset. Assumes there is exactly one
+    value for each month.
+
+    Parameters
+    ----------
+    cube : :class:`~iris.cube.Cube`
+        Iris cube containing a monthly climatology, sorted in time
+
+    Returns
+    -------
+    : :class:`~iris.cube.Cube`
+        Monthly climatology running from January to December
+
+    """
+    time = cube.coord("time")
+    dates = time.units.num2date(time.points)
+    year = dates[0].year
+    # Roll the pages of the array so January comes first
+    jan = [date.month for date in dates].index(1)
+    iris.util.demote_dim_coord_to_aux_coord(cube, "time")
+    index = [slice(None)] * cube.ndim
+    index[cube.coord_dims("time")[0]] = np.roll(np.arange(12), -jan)
+    cube = cube[tuple(index)]
+    # Put all months in the first year of the dataset
+    bounds = [
+        [
+            cftime.datetime(year, month, 1, calendar=time.units.calendar),
+            cftime.datetime(
+                year + month // 12, month % 12 + 1, 1, calendar=time.units.calendar
+            ),
+        ]
+        for month in range(1, 13)
+    ]
+    cube.coord("time").bounds = time.units.date2num(bounds)
+    cube.coord("time").points = np.mean(cube.coord("time").bounds, axis=1)
+    iris.util.promote_aux_coord_to_dim_coord(cube, "time")
+    return cube
+
+
 def monthly_means(dpath, month, gregorian=False):
     """
     Wrapper routine to define and load input files, then produce the monthly
@@ -222,6 +265,8 @@ def main():
     # clims is a list of iris.cube.CubeList instances so unpack and merge to be
     #  a CubeList of monthly means for each field
     clims = iris.cube.CubeList([x for y in clims for x in y]).merge()
+    # Make sure each climatology begins in January
+    clims = iris.cube.CubeList([align_time_axis(clim) for clim in clims])
     # Add data source line to cubes for writing to NetCDF file.
     for clim in clims:
         clim.attributes["source"] = args.datasource
