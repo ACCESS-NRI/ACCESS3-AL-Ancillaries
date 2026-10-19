@@ -82,6 +82,7 @@ def generate_soil_moisture(
             axis=2
             )
 
+    print(f"Moisture units: {moisture_units}")
     if moisture_units == 'mass':
         # We want soil moisture in kg m-2, so scale by 
         # density * soil layer depth.
@@ -178,7 +179,7 @@ def main(soil_parameters_path,
     # Load in the smc wilting to determine the mask and create smc
     smc_at_wilting = iris.load_cube(
             soil_parameters_path,
-            'volumetric_soil_moisture_content_at_saturation'
+            'sm_wilt'
             )
 
     soil_smc = generate_soil_moisture(
