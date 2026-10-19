@@ -12,7 +12,6 @@ import warnings
 
 import ants
 import cf_units
-import cftime
 import iris
 import iris.fileformats.pp
 import numpy as np
@@ -143,6 +142,8 @@ def align_time_axis(cube):
     time = cube.coord("time")
     dates = time.units.num2date(time.points)
     year = dates[0].year
+    # Use the same datetime class as the cube, which carries the calendar
+    datetime = type(dates[0])
     # Roll the pages of the array so January comes first
     jan = [date.month for date in dates].index(1)
     iris.util.demote_dim_coord_to_aux_coord(cube, "time")
@@ -151,12 +152,7 @@ def align_time_axis(cube):
     cube = cube[tuple(index)]
     # Put all months in the first year of the dataset
     bounds = [
-        [
-            cftime.datetime(year, month, 1, calendar=time.units.calendar),
-            cftime.datetime(
-                year + month // 12, month % 12 + 1, 1, calendar=time.units.calendar
-            ),
-        ]
+        [datetime(year, month, 1), datetime(year + month // 12, month % 12 + 1, 1)]
         for month in range(1, 13)
     ]
     cube.coord("time").bounds = time.units.date2num(bounds)
