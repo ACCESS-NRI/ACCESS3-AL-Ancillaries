@@ -39,7 +39,7 @@ def _parse_args():
             required=False,
             type=float,
             default=25.0,
-            help='Maximum soil temperature to apply at the equator.'
+            help='Maximum soil temperature (degC) to apply at the equator.'
             )
 
     parser.add_argument(
@@ -82,6 +82,7 @@ def generate_soil_moisture(
             axis=2
             )
 
+    print(f"Moisture units: {moisture_units}")
     if moisture_units == 'mass':
         # We want soil moisture in kg m-2, so scale by 
         # density * soil layer depth.
@@ -122,10 +123,10 @@ def generate_soil_moisture(
     return smc_cube
 
 
-def generate_soil_temperature(vol_smc_at_saturation, soil_depths, max_temp):
+def generate_soil_temperature(vol_smc_at_saturation, soil_thickness, max_temp):
     """Generate a new soil temperature cube using a simple latitude dependence.
-    The soil temperature varies from the supplied max temperature at the
-    equator to 0.0 at the poles."""
+    The soil temperature varies from the supplied max temperature (degC) at the
+    equator to 0 degC at the poles. The output is in K."""
 
     # Reuse the vol_smc_at_saturation so that we have the mask
     soil_temperature = numpy.ones_like(vol_smc_at_saturation.data)
@@ -158,13 +159,15 @@ def generate_soil_temperature(vol_smc_at_saturation, soil_depths, max_temp):
     soil_temp_cube = iris.cube.Cube(
         soil_temperature,
         var_name='soil_temperature',
-        units='K',
+        units='degC',
         dim_coords_and_dims=[
             (vol_smc_at_saturation.coord('latitude'), 0),
             (vol_smc_at_saturation.coord('longitude'), 1),
             (depth_coord, 2)
             ]
         )
+
+    soil_temp_cube.convert_units('K')
 
     return soil_temp_cube
 
@@ -175,20 +178,20 @@ def main(soil_parameters_path,
          max_temp,
          output
          ):
-    # Load in the smc wilting to determine the mask and create smc
-    smc_at_wilting = iris.load_cube(
+    # Load in the smc at saturation to determine the mask and create smc
+    smc_at_saturation = iris.load_cube(
             soil_parameters_path,
-            'volumetric_soil_moisture_content_at_saturation'
+            iris.NameConstraint(var_name='sm_sat')
             )
 
     soil_smc = generate_soil_moisture(
-            smc_at_wilting,
+            smc_at_saturation,
             soil_thickness,
             moisture_units
             )
 
     soil_temp = generate_soil_temperature(
-            smc_at_wilting,
+            smc_at_saturation,
             soil_thickness,
             max_temp
             )
