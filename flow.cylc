@@ -30,7 +30,7 @@
 			(ancil_lct & ancil_LAI) => ancil_soil_roughness
             {% if SOIL_INITIAL_CONDITIONS %}
                 {% if SOIL_INIT_CONDS_METHOD == "functional" %}
-                    ancil_soil_hydrology => functional_soil_initial_conditions
+                    merge_soils => functional_soil_initial_conditions
                 {% else %}
                     {{ raise("Invalid SOIL_INIT_CONDS_METHOD: " ~ LAND_MODEL) }}
                 {% endif %}
