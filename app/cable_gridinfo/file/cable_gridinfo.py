@@ -116,8 +116,6 @@ SOIL_SOURCES = {
 # reference gridinfo
 REFERENCE_VARIABLES = ['Ndep', 'Nfix', 'Pdust', 'Pwea', 'SoilOrder', 'isoil']
 
-SOIL_STATE_VARIABLES = ['SoilMoist', 'SoilTemp', 'SnowDepth']
-
 
 def _parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -152,12 +150,10 @@ def _parse_args():
 
     parser.add_argument(
             '--soil-initial-conditions',
-            required=False,
+            required=True,
             type=str,
-            default='',
             help="""Soil initial conditions (NetCDF), from
-            functional_soil_initial_conditions. Leave empty to omit
-            SoilMoist, SoilTemp and SnowDepth."""
+            functional_soil_initial_conditions."""
             )
 
     parser.add_argument(
@@ -454,12 +450,7 @@ def main(soil_path,
     fields.update(soil_fields(soil_path))
     fields.update(vegetation_fields(vegetation_fraction_path, is_land))
     fields.update(lai_fields(lai_path))
-
-    if initial_conditions_path:
-        fields.update(soil_state_fields(initial_conditions_path, is_land))
-    else:
-        print(f'No soil initial conditions given, omitting '
-              f'{", ".join(SOIL_STATE_VARIABLES)}.')
+    fields.update(soil_state_fields(initial_conditions_path, is_land))
 
     if reference_path:
         fields.update(reference_fields(reference_path, latitude, longitude))
