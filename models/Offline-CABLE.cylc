@@ -1,0 +1,14 @@
+{# Offline CABLE: land only, including soil initial conditions and the CABLE gridinfo file. #}
+{% set MODEL_CONFIG = {
+    "LAND_MODEL": "CABLE",
+    "ATMOSPHERE_ANCILLARIES": False,
+    "SEA_SURFACE_FORCINGS": False,
+    "SOIL_INIT_CONDS_METHOD": "functional",
+} %}
+
+{# The domain must be supplied by the user, by replacing the "SET-ME" placeholder below #}
+{# with a UM grid namelist. The CCI land cover determines the land mask and land fractions. #}
+{% set DOMAIN = {
+    "GRID_SOURCE": "land_cover",
+    "GRID_NAMELIST": "SET-ME",
+} %}

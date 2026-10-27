@@ -1,0 +1,17 @@
+{# ACCESS-rAM3: regional atmosphere-land model, with PP format aerosols. #}
+{% set MODEL_CONFIG = {
+    "LAND_MODEL": "JULES",
+    "ATMOSPHERE_ANCILLARIES": True,
+    "AEROSOLS": "PP",
+    "SEA_SURFACE_FORCINGS": True,
+    "VERTICAL_DISCRETIZATION": "/g/data/access/TIDS/UM/ancil/data/namelist/vertical/vert_85/latest/vert_85",
+} %}
+
+{# The regional domain must be supplied by the user. Replace the "SET-ME" placeholder(s) below, #}
+{# or change the GRID_SOURCE and supply the corresponding grid file(s): #}
+{#   land_cover: GRID_NAMELIST, land_sea_mask: LAND_SEA_MASK, #}
+{#   ocean_mesh: OCEAN_MESH and RESOLUTION, land_fractions: LAND_FRACTIONS #}
+{% set DOMAIN = {
+    "GRID_SOURCE": "land_cover",
+    "GRID_NAMELIST": "SET-ME",
+} %}

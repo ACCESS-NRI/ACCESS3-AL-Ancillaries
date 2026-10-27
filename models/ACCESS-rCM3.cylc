@@ -1,0 +1,17 @@
+{# ACCESS-rCM3: regional coupled ocean-atmosphere-land model, with PP format aerosols. #}
+{# The sea surface temperature and sea ice come from the ocean model, so no sea surface forcings are built. #}
+{% set MODEL_CONFIG = {
+    "LAND_MODEL": "CABLE",
+    "ATMOSPHERE_ANCILLARIES": True,
+    "AEROSOLS": "PP",
+    "SEA_SURFACE_FORCINGS": False,
+    "VERTICAL_DISCRETIZATION": "/g/data/access/TIDS/UM/ancil/data/namelist/vertical/vert_85/latest/vert_85",
+    "SOIL_INIT_CONDS_METHOD": "functional",
+} %}
+
+{# The domain is defined by the land fractions from the coupled model, which must be supplied #}
+{# by replacing the "SET-ME" placeholder below. #}
+{% set DOMAIN = {
+    "GRID_SOURCE": "land_fractions",
+    "LAND_FRACTIONS": "SET-ME",
+} %}

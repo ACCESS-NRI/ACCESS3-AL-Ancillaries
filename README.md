@@ -21,4 +21,4 @@ After cloning the workflow, the workflow can be run with:
 cylc vip
 ```
 
-This will the run the default configuration, which generates global land and atmosphere ancillaries with a land mask based off an OM3 mesh for the CABLE land surface model using your default `${PROJECT}`. For more detailed information about the workflow, see the [documentation](https://access3-al-ancillaries.readthedocs.io).
+This will the run the default configuration, `MODEL='ACCESS-AM3'`, which generates global land and atmosphere ancillaries with a land mask based off an OM3 mesh for the CABLE land surface model using your default `${PROJECT}`. Other models (`ACCESS-rAM3`, `ACCESS-rCM3`, `Offline-CABLE`, `Offline-JULES`) are selected with the `MODEL` option in `rose-suite.conf`. For more detailed information about the workflow, see the [documentation](https://access3-al-ancillaries.readthedocs.io).
