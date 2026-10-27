@@ -1,0 +1,16 @@
+{# ACCESS-AM3: global atmosphere-land model, with climatological NetCDF aerosols. #}
+{% set MODEL_CONFIG = {
+    "LAND_MODEL": "CABLE",
+    "ATMOSPHERE_ANCILLARIES": True,
+    "AEROSOLS": "NetCDF",
+    "SEA_SURFACE_FORCINGS": True,
+    "VERTICAL_DISCRETIZATION": "/g/data/access/TIDS/UM/ancil/data/namelist/vertical/vert_85/latest/vert_85",
+    "SOIL_INIT_CONDS_METHOD": "functional",
+} %}
+
+{# Target domain. #}
+{% set DOMAIN = {
+    "GRID_SOURCE": "ocean_mesh",
+    "OCEAN_MESH": "/g/data/vk83/configurations/inputs/access-om3/share/meshes/global.25km/2026.06.11/access-om3-25km-ESMFmesh.nc",
+    "RESOLUTION": "n96e",
+} %}

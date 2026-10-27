@@ -1,9 +1,68 @@
 #!jinja2
+{# The target MODEL sets the model specific options, from the corresponding file in models/ #}
+{% set VALID_MODELS = ["ACCESS-AM3", "ACCESS-rAM3", "ACCESS-rCM3", "Offline-CABLE", "Offline-JULES"] %}
+{% if MODEL is not defined or MODEL not in VALID_MODELS %}
+    {{ raise("MODEL must be one of " ~ VALID_MODELS | join(", ")) }}
+{% endif %}
+{% from "models/" ~ MODEL ~ ".cylc" import MODEL_CONFIG, DOMAIN %}
+
+{# The model and domain options are fixed by the model, and can't be set in the rose-suite.conf #}
+{% set USER_SET_MODEL_OPTIONS = {
+    "LAND_MODEL": LAND_MODEL is defined,
+    "ATMOSPHERE_ANCILLARIES": ATMOSPHERE_ANCILLARIES is defined,
+    "AEROSOLS": AEROSOLS is defined,
+    "SEA_SURFACE_FORCINGS": SEA_SURFACE_FORCINGS is defined,
+    "VERTICAL_DISCRETIZATION": VERTICAL_DISCRETIZATION is defined,
+    "SOIL_INIT_CONDS_METHOD": SOIL_INIT_CONDS_METHOD is defined,
+    "GRID_SOURCE": GRID_SOURCE is defined,
+    "GRID_NAMELIST": GRID_NAMELIST is defined,
+    "OCEAN_MESH": OCEAN_MESH is defined,
+    "RESOLUTION": RESOLUTION is defined,
+    "LAND_FRACTIONS": LAND_FRACTIONS is defined,
+    "LAND_SEA_MASK": LAND_SEA_MASK is defined,
+} %}
+{% for option, user_set in USER_SET_MODEL_OPTIONS.items() if user_set %}
+    {{ raise(option ~ " is set by MODEL=" ~ MODEL ~ " in models/" ~ MODEL ~ ".cylc, remove it from the rose-suite.conf") }}
+{% endfor %}
+
+{# Options which the user must fill in are given the placeholder "SET-ME" in the model file #}
+{% for option, value in (MODEL_CONFIG | dictsort) + (DOMAIN | dictsort) if value == "SET-ME" %}
+    {{ raise(option ~ " must be set in models/" ~ MODEL ~ ".cylc for MODEL=" ~ MODEL) }}
+{% endfor %}
+
+{% set LAND_MODEL = MODEL_CONFIG["LAND_MODEL"] %}
+{% set ATMOSPHERE_ANCILLARIES = MODEL_CONFIG["ATMOSPHERE_ANCILLARIES"] %}
+{% set SEA_SURFACE_FORCINGS = MODEL_CONFIG["SEA_SURFACE_FORCINGS"] %}
+{% set AEROSOLS = MODEL_CONFIG.get("AEROSOLS") %}
+{% set VERTICAL_DISCRETIZATION = MODEL_CONFIG.get("VERTICAL_DISCRETIZATION") %}
+{% set SOIL_INIT_CONDS_METHOD = MODEL_CONFIG.get("SOIL_INIT_CONDS_METHOD") %}
+
+{% set GRID_SOURCE = DOMAIN["GRID_SOURCE"] %}
+{% set GRID_NAMELIST = DOMAIN.get("GRID_NAMELIST") %}
+{% set OCEAN_MESH = DOMAIN.get("OCEAN_MESH") %}
+{% set RESOLUTION = DOMAIN.get("RESOLUTION") %}
+{% set LAND_FRACTIONS = DOMAIN.get("LAND_FRACTIONS") %}
+{% set LAND_SEA_MASK = DOMAIN.get("LAND_SEA_MASK") %}
+
+{# Check that the files required by the grid source are available #}
+{% set GRID_SOURCE_REQUIREMENTS = {
+    "land_cover": {"GRID_NAMELIST": GRID_NAMELIST},
+    "land_sea_mask": {"LAND_SEA_MASK": LAND_SEA_MASK},
+    "ocean_mesh": {"OCEAN_MESH": OCEAN_MESH, "RESOLUTION": RESOLUTION},
+    "land_fractions": {"LAND_FRACTIONS": LAND_FRACTIONS},
+} %}
+{% if GRID_SOURCE not in GRID_SOURCE_REQUIREMENTS %}
+    {{ raise("Invalid GRID_SOURCE in models/" ~ MODEL ~ ".cylc: " ~ GRID_SOURCE ~ ", must be one of " ~ GRID_SOURCE_REQUIREMENTS.keys() | join(", ")) }}
+{% endif %}
+{% for option, value in GRID_SOURCE_REQUIREMENTS[GRID_SOURCE].items() if not value %}
+    {{ raise(option ~ " must be set in models/" ~ MODEL ~ ".cylc when GRID_SOURCE=" ~ GRID_SOURCE) }}
+{% endfor %}
+
 {% include "task_resources.cylc" %}
 
 [meta]
-    title = "CCI Ancillary Suite"
-    description = "Create a set of ancillaries using CCI Land Cover as the primary data source."
+    title = "CCI Ancillary Suite for {{ MODEL }}"
+    description = "Create a set of {{ MODEL }} ancillaries using CCI Land Cover as the primary data source."
 
 [scheduling]
     [[graph]]
@@ -57,8 +116,10 @@
                 ancil_lct => ancil_clim_dms
                 ancil_lct => ancil_clim_sea
                 (ancil_orography_unfiltered_preproc & ancil_lct) => ancil_radiation_parameters
-                ancil_lct => regrid_seaice_reynolds
-                ancil_lct => regrid_SST_reynolds
+                {% if SEA_SURFACE_FORCINGS %}
+                    ancil_lct => regrid_seaice_reynolds
+                    ancil_lct => regrid_SST_reynolds
+                {% endif %}
                 (ancil_river_routing_preproc & ancil_lct) => ancil_river_routing
                 ancil_river_routing => ancil_river_storage_preproc => ancil_river_storage
         {% endif %}
@@ -92,7 +153,9 @@
                 TARGET_LSM=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask
             {% endif %}
 
-            VERTICAL_DISCRETIZATION={{ VERTICAL_DISCRETIZATION }}
+            {% if ATMOSPHERE_ANCILLARIES %}
+                VERTICAL_DISCRETIZATION={{ VERTICAL_DISCRETIZATION }}
+            {% endif %}
             TARGET_OCEAN=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask_sea
             TARGET_OROGRAPHIC_LSM=${ANCIL_TARGET_PATH}/orography/qrparm.orog_wavedrag
             CALENDAR={{ CALENDAR }}

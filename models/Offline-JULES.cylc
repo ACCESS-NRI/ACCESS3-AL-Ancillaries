@@ -1,0 +1,13 @@
+{# Offline JULES: land only. #}
+{% set MODEL_CONFIG = {
+    "LAND_MODEL": "JULES",
+    "ATMOSPHERE_ANCILLARIES": False,
+    "SEA_SURFACE_FORCINGS": False,
+} %}
+
+{# The domain must be supplied by the user, by replacing the "SET-ME" placeholder below #}
+{# with a UM grid namelist. The CCI land cover determines the land mask and land fractions. #}
+{% set DOMAIN = {
+    "GRID_SOURCE": "land_cover",
+    "GRID_NAMELIST": "SET-ME",
+} %}
