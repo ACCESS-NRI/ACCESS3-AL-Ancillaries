@@ -28,16 +28,14 @@
 			(ancil_soil_hydrology & ancil_soil_albedo) => merge_soils
 			(ancil_split_grass_types & merge_soils) => ancil_soil_dust
 			(ancil_lct & ancil_LAI) => ancil_soil_roughness
-            {# The CABLE gridinfo, for offline CABLE, is built alongside the soil initial conditions #}
-            {% if LAND_MODEL == "CABLE" and SOIL_INITIAL_CONDITIONS %}
-                (merge_soils & ancil_split_grass_types & regrid_LAI & functional_soil_initial_conditions) => cable_gridinfo
-            {% endif %}
-            {% if SOIL_INITIAL_CONDITIONS %}
+            {# The soil initial conditions and CABLE gridinfo, for offline CABLE, are only built for CABLE #}
+            {% if LAND_MODEL == "CABLE" %}
                 {% if SOIL_INIT_CONDS_METHOD == "functional" %}
                     merge_soils => functional_soil_initial_conditions
                 {% else %}
-                    {{ raise("Invalid SOIL_INIT_CONDS_METHOD: " ~ LAND_MODEL) }}
+                    {{ raise("Invalid SOIL_INIT_CONDS_METHOD: " ~ SOIL_INIT_CONDS_METHOD) }}
                 {% endif %}
+                (merge_soils & ancil_split_grass_types & regrid_LAI & functional_soil_initial_conditions) => cable_gridinfo
             {% endif %}
             {% if ATMOSPHERE_ANCILLARIES %}
                 (ancil_orographic_formdrag_preproc & ancil_lct) => ancil_orographic_formdrag
