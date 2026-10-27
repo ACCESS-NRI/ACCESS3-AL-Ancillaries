@@ -261,8 +261,6 @@ def main():
     # clims is a list of iris.cube.CubeList instances so unpack and merge to be
     #  a CubeList of monthly means for each field
     clims = iris.cube.CubeList([x for y in clims for x in y]).merge()
-    # Make sure each climatology begins in January
-    clims = iris.cube.CubeList([align_time_axis(clim) for clim in clims])
     # Add data source line to cubes for writing to NetCDF file.
     for clim in clims:
         clim.attributes["source"] = args.datasource
