@@ -1,6 +1,6 @@
 # functional_soil_initial_conditions
 
-The `functional_soil_initial_conditions` app generates basic soil moisture and soil temperature initial conditions for the land model, from simple functional forms. It is run when `SOIL_INITIAL_CONDITIONS` is enabled and `SOIL_INIT_CONDS_METHOD` is `"functional"`. The resulting initial conditions should be valid enough to begin a spin-up of a land model, but should not be used for short time scale simulations where the initial condition is important. The precise steps performed by the task are:
+The `functional_soil_initial_conditions` app generates basic soil moisture and soil temperature initial conditions for the land model, from simple functional forms. It is run when `LAND_MODEL` is `"CABLE"` and `SOIL_INIT_CONDS_METHOD` is `"functional"`. The resulting initial conditions should be valid enough to begin a spin-up of a land model, but should not be used for short time scale simulations where the initial condition is important. The precise steps performed by the task are:
 
 1. Load the volumetric soil moisture content at saturation (`sm_sat`) from the soil parameters ancillary. This also determines the grid and the land points of the output.
 2. Generate the soil moisture by setting every soil layer to saturation. With `volumetric` moisture units, the output is the volumetric soil moisture content at saturation (m3 m-3). With `mass` moisture units, it is scaled by the density of water and the thickness of each layer to give the mass of water in each layer (kg m-2).

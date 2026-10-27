@@ -30,8 +30,7 @@ The workflow is intended to be configured via the options in the `rose-suite.con
 * `AEROSOLS`: *string*, Which version of the aerosols to create. Regional models like ACCESS-rAM3 use `"PP"`, while global models like ACCESS-AM3 use `"NetCDF"`.
 * `URBAN`: *bool*, Whether to include urban fractions in the land cover to surface type mapping.
 * `CCI_YEAR`: *int*, Which year to use from the CCI land cover dataset to use.
-* `SOIL_INITIAL_CONDITIONS`: *bool*, Whether to generate soil initial conditions for the land model.
-* `SOIL_INIT_CONDS_METHOD`: *string*, Method to use for generating soil initial conditions. Options are `"functional"`.
+* `SOIL_INIT_CONDS_METHOD`: *string*, Method to use for generating soil initial conditions. Options are `"functional"`. Soil initial conditions, and a CABLE gridinfo file for offline CABLE, are only generated when `LAND_MODEL` is `"CABLE"`.
 
 For more information about the tasks that makes up the workflow, see the [apps](apps/index.md) section for a visualisation of the graph and brief descriptions of each task.
 
