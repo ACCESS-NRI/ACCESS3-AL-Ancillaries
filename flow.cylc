@@ -17,16 +17,16 @@
 			{% endif %}
 			ancil_lct => regrid_ncar_lulcc
 			ancil_lct => ancil_fix_antarctic_permanent_ice
-			(ancil_fix_antarctic_permanent_ice & regrid_ncar_lulcc) => ancil_split_grass_types
+			(ancil_fix_antarctic_permanent_ice & regrid_ncar_lulcc) => ancil_split_grass_types => ancil_min_tile_fraction
 			ancil_lct => regrid_LAI
-			(ancil_split_grass_types & regrid_LAI) => ancil_LAI
+			(ancil_min_tile_fraction & regrid_LAI) => ancil_LAI
 			ancil_LAI => ancil_canopy_height
 			(ancil_LAI & ancil_canopy_height) => merge_veg_func
-			ancil_split_grass_types => ancil_soil_hydrology
-			ancil_split_grass_types => ancil_topographic_index
-			ancil_split_grass_types => ancil_soil_albedo
+			ancil_min_tile_fraction => ancil_soil_hydrology
+			ancil_min_tile_fraction => ancil_topographic_index
+			ancil_min_tile_fraction => ancil_soil_albedo
 			(ancil_soil_hydrology & ancil_soil_albedo) => merge_soils
-			(ancil_split_grass_types & merge_soils) => ancil_soil_dust
+			(ancil_min_tile_fraction & merge_soils) => ancil_soil_dust
 			(ancil_lct & ancil_LAI) => ancil_soil_roughness
             {# The soil initial conditions and CABLE gridinfo, for offline CABLE, are only built for CABLE #}
             {% if LAND_MODEL == "CABLE" %}
@@ -35,7 +35,7 @@
                 {% else %}
                     {{ raise("Invalid SOIL_INIT_CONDS_METHOD: " ~ SOIL_INIT_CONDS_METHOD) }}
                 {% endif %}
-                (merge_soils & ancil_split_grass_types & regrid_LAI & functional_soil_initial_conditions) => cable_gridinfo
+                (merge_soils & ancil_min_tile_fraction & regrid_LAI & functional_soil_initial_conditions) => cable_gridinfo
             {% endif %}
             {% if ATMOSPHERE_ANCILLARIES %}
                 (ancil_orographic_formdrag_preproc & ancil_lct) => ancil_orographic_formdrag
@@ -181,6 +181,10 @@
             {% elif LAND_MODEL == "JULES" %}
                 GRASS_MAPPING = "ncar_grass_jules.json"
             {% endif %}
+
+    [[ancil_min_tile_fraction]]
+        inherit = PBS_medium_serial
+        script = rose task-run
 
     [[regrid_LAI]]
         inherit = PBS_medium_parallel
