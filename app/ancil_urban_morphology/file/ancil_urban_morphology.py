@@ -4,12 +4,14 @@ Urban morphology application
 ****************************
 
 Derive the UCLEM urban morphology ancillary fields (STASH items 920-931) from
-a set of urban source (e.g. U-Surf) GeoTIFFs, one file per variable, by:
+a directory of urban source (e.g. U-Surf v1.1) GeoTIFFs, one file per variable,
+by:
 
 - Reading the first band (the value; later bands are quality flags) of the
-  file for each required variable (e.g. HT_ROOF), identified from the file name
-  (global_<VARIABLE>_1km_*.tif). Only the part of the source covering the target
-  grid is read. Nodata and out of range values are masked.
+  file for each required variable (e.g. global_HT_ROOF_1km_masked_gapfilled_QC_v1.1.tif).
+  The file names are listed explicitly in this script. Only the part of the
+  source covering the target grid is read. Nodata and out of range values are
+  masked.
 - Regridding each band to the grid of the provided vegetation fraction
   ancillary. The target grid, land mask and urban mask are all taken from this
   file, so the application is independent of the model resolution.
@@ -25,17 +27,16 @@ Options:
  * --urban-threshold : Urban tile fraction above which a point is urban.
  * --output : the output file
 Arguments:
- * The urban source GeoTIFFs follow the options. Files for variables which are
-   not needed are ignored.
+ * The directory containing the urban source GeoTIFFs follows the options.
+   Other files in the directory are ignored.
 
 Example Usage:
 ancil_urban_morphology.py --veg-fraction ${veg_frac} --output ${outfile} \
-                          ${urban_source_dir}/global_*_1km_*.tif
+                          ${urban_source_dir}
 """
 
 import os
-import re
-from typing import Callable, NamedTuple
+from typing import NamedTuple
 
 import ants
 import ants.io.save as save
@@ -53,60 +54,34 @@ URBAN_TILE_ID = 15
 URBAN_THRESHOLD = 1e-12
 
 
-class SourceBand(NamedTuple):
-    """A required urban source variable, and what values are valid."""
+class SourceFile(NamedTuple):
+    """A required urban source file, and what values are valid in it."""
 
-    variable: str
+    file_name: str
     valid_min: float
     valid_max: float
 
 
 class OutputField(NamedTuple):
-    """A UM field to write, and how to derive it from the regridded bands."""
+    """A UM field to write."""
 
     stash_item: int
     name: str
-    derive: Callable
+    values: np.ma.MaskedArray
 
 
-SOURCE_BANDS = (
-    SourceBand("HT_ROOF", 0.0, np.inf),
-    SourceBand("CANYON_HWR", 0.0, np.inf),
-    SourceBand("WTLUNIT_ROOF", 0.0, 1.0),
-    SourceBand("WTROAD_PERV", 0.0, 1.0),
-    SourceBand("ALB_ROOF", 0.0, 1.0),
-    SourceBand("ALB_WALL", 0.0, 1.0),
-    SourceBand("ALB_IMPROAD", 0.0, 1.0),
-    SourceBand("ALB_PERROAD", 0.0, 1.0),
-    SourceBand("EM_ROOF", 0.0, 1.0),
-    SourceBand("EM_WALL", 0.0, 1.0),
-    SourceBand("EM_IMPROAD", 0.0, 1.0),
-    SourceBand("EM_PERROAD", 0.0, 1.0),
-)
-
-
-def _canyon_fraction(bands):
-    return 1.0 - bands["WTLUNIT_ROOF"]
-
-
-def _canyon_vegetation_fraction(bands):
-    return bands["WTROAD_PERV"] * _canyon_fraction(bands)
-
-
-OUTPUT_FIELDS = (
-    OutputField(920, "UCLEM_BUILDING_HEIGHT", lambda bands: bands["HT_ROOF"]),
-    OutputField(921, "UCLEM_CANYON_HWR", lambda bands: bands["CANYON_HWR"]),
-    OutputField(922, "UCLEM_WIDTH_RATIO", _canyon_fraction),
-    OutputField(923, "UCLEM_ROOF_ALBEDO", lambda bands: bands["ALB_ROOF"]),
-    OutputField(924, "UCLEM_WALL_ALBEDO", lambda bands: bands["ALB_WALL"]),
-    OutputField(925, "UCLEM_ROAD_ALBEDO", lambda bands: bands["ALB_IMPROAD"]),
-    OutputField(926, "UCLEM_CANYON_VEG_FRACTION", _canyon_vegetation_fraction),
-    OutputField(927, "UCLEM_CANYON_VEG_ALBEDO", lambda bands: bands["ALB_PERROAD"]),
-    OutputField(928, "UCLEM_ROOF_EMISSIVITY", lambda bands: bands["EM_ROOF"]),
-    OutputField(929, "UCLEM_WALL_EMISSIVITY", lambda bands: bands["EM_WALL"]),
-    OutputField(930, "UCLEM_ROAD_EMISSIVITY", lambda bands: bands["EM_IMPROAD"]),
-    OutputField(931, "UCLEM_CANYON_VEG_EMISSIVITY", lambda bands: bands["EM_PERROAD"]),
-)
+ROOF_HEIGHT_FILE = SourceFile("global_HT_ROOF_1km_masked_gapfilled_QC_v1.1.tif", 0.0, np.inf)
+CANYON_HEIGHT_TO_WIDTH_FILE = SourceFile("global_CANYON_HWR_1km_masked_gapfilled_QC_v1.1.tif", 0.0, np.inf)
+ROOF_FRACTION_FILE = SourceFile("global_WTLUNIT_ROOF_1km_masked_QC_v1.1.tif", 0.0, 1.0)
+CANYON_ROAD_PERVIOUS_FRACTION_FILE = SourceFile("global_WTROAD_PERV_1km_masked_QC_v1.1.tif", 0.0, 1.0)
+ROOF_ALBEDO_FILE = SourceFile("global_ALB_ROOF_1km_masked_gapfilled_QC_v1.1.tif", 0.0, 1.0)
+WALL_ALBEDO_FILE = SourceFile("global_ALB_WALL_1km_masked_gapfilled_QC_v1.1.tif", 0.0, 1.0)
+IMPERVIOUS_ROAD_ALBEDO_FILE = SourceFile("global_ALB_IMPROAD_1km_masked_gapfilled_QC_v1.1.tif", 0.0, 1.0)
+PERVIOUS_ROAD_ALBEDO_FILE = SourceFile("global_ALB_PERROAD_1km_masked_gapfilled_QC_v1.1.tif", 0.0, 1.0)
+ROOF_EMISSIVITY_FILE = SourceFile("global_EM_ROOF_1km_masked_gapfilled_QC_v1.1.tif", 0.0, 1.0)
+WALL_EMISSIVITY_FILE = SourceFile("global_EM_WALL_1km_masked_gapfilled_QC_v1.1.tif", 0.0, 1.0)
+IMPERVIOUS_ROAD_EMISSIVITY_FILE = SourceFile("global_EM_IMPROAD_1km_masked_gapfilled_QC_v1.1.tif", 0.0, 1.0)
+PERVIOUS_ROAD_EMISSIVITY_FILE = SourceFile("global_EM_PERROAD_1km_masked_gapfilled_QC_v1.1.tif", 0.0, 1.0)
 
 
 def _parse_args():
@@ -131,6 +106,8 @@ def _parse_args():
         help="Urban tile fraction above which a point is considered urban",
     )
     args = parser.parse_args()
+    if len(args.sources) != 1 or not os.path.isdir(args.sources[0]):
+        parser.error("The source must be a single directory of urban GeoTIFFs")
     return args
 
 
@@ -140,18 +117,6 @@ def mask_invalid_values(values, valid_min, valid_max):
         ~np.isfinite(values) | (values < valid_min) | (values > valid_max),
         values,
     )
-
-
-def source_files_by_variable(source_paths):
-    """Map each variable to its source file, using the file name
-    global_<VARIABLE>_1km_*.tif."""
-    pattern = re.compile(r"global_(?P<variable>[A-Z0-9_]+?)_1km_")
-    files = {}
-    for path in source_paths:
-        match = pattern.match(os.path.basename(path))
-        if match:
-            files[match.group("variable")] = path
-    return files
 
 
 def target_window(geotransform, shape, template, margin_pixels=2):
@@ -181,12 +146,15 @@ def target_window(geotransform, shape, template, margin_pixels=2):
     return x_start, y_start, x_stop - x_start, y_stop - y_start
 
 
-def read_source_variable(path, source_band, template):
+def read_source_file(source_directory, source_file, template):
     """
     Read the value band of a source GeoTIFF, over the extent of the target
     template, as a cube with invalid values masked and ascending latitude.
     """
-    dataset = gdal.Open(str(path))
+    path = os.path.join(source_directory, source_file.file_name)
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Urban source file not found: {path}")
+    dataset = gdal.Open(path)
     geotransform = dataset.GetGeoTransform()
     x_offset, y_offset, n_columns, n_rows = target_window(
         geotransform, (dataset.RasterYSize, dataset.RasterXSize), template
@@ -221,8 +189,8 @@ def read_source_variable(path, source_band, template):
     longitude.guess_bounds()
 
     return iris.cube.Cube(
-        mask_invalid_values(values, source_band.valid_min, source_band.valid_max),
-        long_name=source_band.variable,
+        mask_invalid_values(values, source_file.valid_min, source_file.valid_max),
+        long_name=source_file.file_name,
         units="1",
         dim_coords_and_dims=[(latitude, 0), (longitude, 1)],
     )
@@ -274,13 +242,55 @@ def fill_invalid_urban_points(regridded_band, urban_mask):
     return filler(urban_only), n_missing_urban
 
 
-def build_output_cube(field, bands, land_mask, urban_mask, template):
+def load_urban_variable(source_directory, source_file, template, urban_mask):
+    """Read a source file, regrid it to the target grid and fill invalid urban
+    points. Returns the filled data as a masked array."""
+    source_cube = read_source_file(source_directory, source_file, template)
+    regridded = regrid_band(source_cube, template)
+    filled, n_filled = fill_invalid_urban_points(regridded, urban_mask)
+    print(f"{source_file.file_name}: filled {n_filled} urban points")
+    return filled.data
+
+
+def derive_output_fields(
+    roof_height,
+    canyon_height_to_width,
+    roof_fraction,
+    canyon_road_pervious_fraction,
+    roof_albedo,
+    wall_albedo,
+    impervious_road_albedo,
+    pervious_road_albedo,
+    roof_emissivity,
+    wall_emissivity,
+    impervious_road_emissivity,
+    pervious_road_emissivity,
+):
+    """Derive the UCLEM fields (STASH 920-931) from the regridded variables."""
+    canyon_fraction = 1.0 - roof_fraction
+    canyon_vegetation_fraction = canyon_road_pervious_fraction * canyon_fraction
+    return (
+        OutputField(920, "UCLEM_BUILDING_HEIGHT", roof_height),
+        OutputField(921, "UCLEM_CANYON_HWR", canyon_height_to_width),
+        OutputField(922, "UCLEM_WIDTH_RATIO", canyon_fraction),
+        OutputField(923, "UCLEM_ROOF_ALBEDO", roof_albedo),
+        OutputField(924, "UCLEM_WALL_ALBEDO", wall_albedo),
+        OutputField(925, "UCLEM_ROAD_ALBEDO", impervious_road_albedo),
+        OutputField(926, "UCLEM_CANYON_VEG_FRACTION", canyon_vegetation_fraction),
+        OutputField(927, "UCLEM_CANYON_VEG_ALBEDO", pervious_road_albedo),
+        OutputField(928, "UCLEM_ROOF_EMISSIVITY", roof_emissivity),
+        OutputField(929, "UCLEM_WALL_EMISSIVITY", wall_emissivity),
+        OutputField(930, "UCLEM_ROAD_EMISSIVITY", impervious_road_emissivity),
+        OutputField(931, "UCLEM_CANYON_VEG_EMISSIVITY", pervious_road_emissivity),
+    )
+
+
+def build_output_cube(field, land_mask, urban_mask, template):
     """
-    Derive an output field: masked over the ocean, 0 over non-urban land and
-    the derived value over urban points.
+    Build the cube for an output field: masked over the ocean, 0 over non-urban
+    land and the derived value over urban points.
     """
-    derived = field.derive(bands).data
-    values = np.where(urban_mask, np.ma.filled(derived, 0.0), 0.0)
+    values = np.where(urban_mask, np.ma.filled(field.values, 0.0), 0.0)
     cube = template.copy(np.ma.masked_where(~land_mask, values))
     cube.rename(field.name)
     cube.units = "1"
@@ -288,7 +298,7 @@ def build_output_cube(field, bands, land_mask, urban_mask, template):
     return cube
 
 
-def main(source_paths, veg_fraction_path, urban_tile_id, urban_threshold, outfile, netcdf_only):
+def main(source_directory, veg_fraction_path, urban_tile_id, urban_threshold, outfile, netcdf_only):
     "main top/level"
     gdal.UseExceptions()
     template, land_mask, urban_mask = load_target_grid(
@@ -302,28 +312,39 @@ def main(source_paths, veg_fraction_path, urban_tile_id, urban_threshold, outfil
             "generated with the urban tile enabled?"
         )
 
-    source_files = source_files_by_variable(source_paths)
-    missing = [b.variable for b in SOURCE_BANDS if b.variable not in source_files]
-    if missing:
-        raise ValueError(
-            f"No source files provided for variables {missing}; "
-            f"found files for: {sorted(source_files)}"
-        )
+    def load(source_file):
+        return load_urban_variable(source_directory, source_file, template, urban_mask)
 
-    bands = {}
-    for source_band in SOURCE_BANDS:
-        source_cube = read_source_variable(
-            source_files[source_band.variable], source_band, template
-        )
-        regridded = regrid_band(source_cube, template)
-        bands[source_band.variable], n_filled = fill_invalid_urban_points(
-            regridded, urban_mask
-        )
-        print(f"{source_band.variable}: filled {n_filled} urban points")
+    roof_height = load(ROOF_HEIGHT_FILE)
+    canyon_height_to_width = load(CANYON_HEIGHT_TO_WIDTH_FILE)
+    roof_fraction = load(ROOF_FRACTION_FILE)
+    canyon_road_pervious_fraction = load(CANYON_ROAD_PERVIOUS_FRACTION_FILE)
+    roof_albedo = load(ROOF_ALBEDO_FILE)
+    wall_albedo = load(WALL_ALBEDO_FILE)
+    impervious_road_albedo = load(IMPERVIOUS_ROAD_ALBEDO_FILE)
+    pervious_road_albedo = load(PERVIOUS_ROAD_ALBEDO_FILE)
+    roof_emissivity = load(ROOF_EMISSIVITY_FILE)
+    wall_emissivity = load(WALL_EMISSIVITY_FILE)
+    impervious_road_emissivity = load(IMPERVIOUS_ROAD_EMISSIVITY_FILE)
+    pervious_road_emissivity = load(PERVIOUS_ROAD_EMISSIVITY_FILE)
 
+    output_fields = derive_output_fields(
+        roof_height,
+        canyon_height_to_width,
+        roof_fraction,
+        canyon_road_pervious_fraction,
+        roof_albedo,
+        wall_albedo,
+        impervious_road_albedo,
+        pervious_road_albedo,
+        roof_emissivity,
+        wall_emissivity,
+        impervious_road_emissivity,
+        pervious_road_emissivity,
+    )
     output_cubes = iris.cube.CubeList(
-        build_output_cube(field, bands, land_mask, urban_mask, template)
-        for field in OUTPUT_FIELDS
+        build_output_cube(field, land_mask, urban_mask, template)
+        for field in output_fields
     )
 
     save.netcdf(output_cubes, outfile)
@@ -334,7 +355,7 @@ def main(source_paths, veg_fraction_path, urban_tile_id, urban_threshold, outfil
 if __name__ == "__main__":
     args = _parse_args()
     main(
-        args.sources,
+        args.sources[0],
         args.veg_fraction,
         args.urban_tile_id,
         args.urban_threshold,

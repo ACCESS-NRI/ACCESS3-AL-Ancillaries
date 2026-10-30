@@ -1,9 +1,9 @@
 # ancil_urban_morphology
 
-The `ancil_urban_morphology` app derives the UCLEM urban morphology ancillary fields (STASH items 920-931) from a set of urban source GeoTIFFs (e.g. U-Surf), one file per variable. The target grid, land points and urban points are all taken from the vegetation fraction ancillary, so the app does not depend on the model resolution and no template ancillary is needed. The precise steps performed by the task are:
+The `ancil_urban_morphology` app derives the UCLEM urban morphology ancillary fields (STASH items 920-931) from a directory of U-Surf v1.1 GeoTIFFs, one file per variable. The target grid, land points and urban points are all taken from the vegetation fraction ancillary, so the app does not depend on the model resolution and no template ancillary is needed. The precise steps performed by the task are:
 
 1. Load the vegetation fractions and extract the urban tile (pseudo level 15). Land points are those not masked, and urban points are land points where the urban tile fraction is above the urban threshold.
-2. Read the first band (the value; any further bands are quality flags) of the GeoTIFF for each required variable, identified from the file name `global_<VARIABLE>_1km_*.tif`. Only the part of the source covering the target grid is read. Nodata values, and values outside the valid range of the variable (non-negative for `HT_ROOF` and `CANYON_HWR`, 0 to 1 for the others), are masked.
+2. Read the first band (the value; any further bands are quality flags) of the GeoTIFF for each required variable, located by its exact U-Surf v1.1 file name (listed in the script, e.g. `global_HT_ROOF_1km_masked_gapfilled_QC_v1.1.tif`). Only the part of the source covering the target grid is read. Nodata values, and values outside the valid range of the variable (non-negative for `HT_ROOF` and `CANYON_HWR`, 0 to 1 for the others), are masked.
 3. Regrid each variable to the target grid using the horizontal regridding scheme from the ANTS config.
 4. Urban points with no valid regridded value are filled from the nearest valid urban point.
 5. Derive the output fields. Non-urban land points are set to 0 and ocean points are masked.
@@ -23,12 +23,12 @@ The `ancil_urban_morphology` app derives the UCLEM urban morphology ancillary fi
 | 930 | `UCLEM_ROAD_EMISSIVITY` | `EM_IMPROAD` |
 | 931 | `UCLEM_CANYON_VEG_EMISSIVITY` | `EM_PERROAD` |
 
-The source must include files for the variables `HT_ROOF`, `CANYON_HWR`, `WTLUNIT_ROOF`, `WTROAD_PERV`, `ALB_ROOF`, `ALB_WALL`, `ALB_IMPROAD`, `ALB_PERROAD`, `EM_ROOF`, `EM_WALL`, `EM_IMPROAD` and `EM_PERROAD`. Other files in the source directory (e.g. `PCT_URBAN`) are ignored. The task fails if any file is missing, or if the vegetation fractions have no urban points (e.g. land cover generated with `URBAN=False`). The variables are defined by `SOURCE_BANDS` in the script. Memory use scales with the size of the target domain, as the source is read at 1 km.
+The source must include files for the variables `HT_ROOF`, `CANYON_HWR`, `WTLUNIT_ROOF`, `WTROAD_PERV`, `ALB_ROOF`, `ALB_WALL`, `ALB_IMPROAD`, `ALB_PERROAD`, `EM_ROOF`, `EM_WALL`, `EM_IMPROAD` and `EM_PERROAD`. Other files in the source directory (e.g. `PCT_URBAN`) are ignored. The task fails if any of the expected files is missing, or if the vegetation fractions have no urban points (e.g. land cover generated with `URBAN=False`). The file names and valid ranges are the `*_FILE` constants in the script. Memory use scales with the size of the target domain, as the source is read at 1 km.
 
 ## Env Arguments
 
 #### Inputs
-* `URBAN_SOURCE_DIR`: Directory of urban morphology GeoTIFFs, one per variable.
+* `URBAN_SOURCE_DIR`: Directory containing the U-Surf v1.1 GeoTIFFs, one per variable, with their original file names.
 * `VEG_FRACTION_SOURCE`: Vegetation fractions (NetCDF, `qrparm.veg.frac.nc`) defining the target grid, land points and urban tile.
 
 #### Outputs
