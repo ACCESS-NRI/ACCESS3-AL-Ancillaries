@@ -62,7 +62,7 @@ def _parse_args():
     parser.add_argument(
         "--urban-tile-id",
         type=int,
-        default=15,
+        default=6,
         help="Pseudo level of the urban tile in the vegetation fractions",
     )
     parser.add_argument(
