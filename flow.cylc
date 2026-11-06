@@ -62,6 +62,10 @@
                 (ancil_river_routing_preproc & ancil_lct) => ancil_river_routing
                 ancil_river_routing => ancil_river_storage_preproc => ancil_river_storage
         {% endif %}
+        {# In dev mode a task that always fails keeps the workflow active once everything else has finished #}
+        {% if DEV_MODE %}
+            keep_workflow_alive
+        {% endif %}
         """
 
 [runtime]
@@ -348,3 +352,14 @@
     [[ancil_river_storage]]
         inherit = PBS_small_serial
         script = rose task-run
+
+    {% if DEV_MODE %}
+    [[keep_workflow_alive]]
+        # Runs locally (no PBS) and always fails, so the workflow stalls instead of shutting down
+        script = """
+            echo "DEV_MODE: this task fails on purpose to keep the workflow active."
+            exit 1
+        """
+        # Override the retry delays inherited from root so it fails immediately
+        execution retry delays =
+    {% endif %}
