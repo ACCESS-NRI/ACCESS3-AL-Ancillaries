@@ -31,6 +31,7 @@ The workflow is intended to be configured via the options in the `rose-suite.con
 * `URBAN`: *bool*, Whether to include urban fractions in the land cover to surface type mapping.
 * `CCI_YEAR`: *int*, Which year to use from the CCI land cover dataset to use.
 * `SOIL_INIT_CONDS_METHOD`: *string*, Method to use for generating soil initial conditions. Options are `"functional"`. Soil initial conditions, and a CABLE gridinfo file for offline CABLE, are only generated when `LAND_MODEL` is `"CABLE"`.
+* `DEV_MODE`: *bool*, Used to keep the workflow alive during development.
 
 For more information about the tasks that makes up the workflow, see the [apps](apps/index.md) section for a visualisation of the graph and brief descriptions of each task.
 
@@ -53,3 +54,12 @@ The `--run-name` is not required, but highly recommended as it makes it signific
 * `cylc clean ACCESS3-AL-Ancillaries/<name>`: Remove the workflow after it's finished or stopped.
 
 See the [Cylc7 to Cylc8 cheat sheet](https://cylc.github.io/cylc-doc/stable/html/7-to-8/cheat-sheet.html) for a quick run down of the commands.
+
+### Dev mode
+
+You may be developing a script within the workflow, or testing different inputs to a given task in the workflow. Ideally, one would be able to retrigger specific tasks in the workflow to test these changes. This is difficult to do when a workflow finishes successfully, so `DEV_MODE` adds a task that's guaranteed to fail, so that the workflow always stays alive. With this active, you can make changes to a task, reload the workflow, then trigger just the desired task, or a desired task and any dependents of that task. Note that the workflow still shuts down after the last failure, but it can be awaked with `cylc play`. The typical workflow for modifying and triggering a specific task would be:
+
+1. Modify the workflow with the desired changes.
+2. Reinstall with the workflow with `cylc vr <workflow>/<name>`.
+3. Wake the workflow with `cylc play <workflow>/<name>`.
+4. Trigger the task with `cylc trigger <workflow>/<name>//<task_name>`.

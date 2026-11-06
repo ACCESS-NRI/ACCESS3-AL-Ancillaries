@@ -22,3 +22,7 @@ cylc vip
 ```
 
 This will the run the default configuration, which generates global land and atmosphere ancillaries with a land mask based off an OM3 mesh for the CABLE land surface model using your default `${PROJECT}`. For more detailed information about the workflow, see the [documentation](https://access3-al-ancillaries.readthedocs.io).
+
+## Development Mode
+
+Set `DEV_MODE=True` in `rose-suite.conf` to add a `keep_workflow_alive` task which always fails. A workflow with a failed task stalls rather than shutting down, so once every other task has finished the workflow stays active and individual tasks can be re-triggered (e.g. `cylc trigger '//1/ancil_lct'`). Stop the workflow with `cylc stop` when finished. `DEV_MODE` is `False` by default.
