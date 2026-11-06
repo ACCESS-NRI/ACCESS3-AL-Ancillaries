@@ -41,12 +41,11 @@ ancil_urban_morphology.py --veg-fraction ${veg_frac} --output ${outfile} \
 import os
 
 import ants
-import ants.decomposition as decomposition
-import ants.io.save as save
+import ants.decomposition
 import iris
 import iris.cube
 import iris.fileformats.pp
-import numpy as np
+import numpy
 
 iris.FUTURE.save_split_attrs = True
 
@@ -87,14 +86,14 @@ def generate_urban_mask(veg_fraction_path, urban_tile_id, urban_threshold):
     target grid. Urban points are land points where the urban tile fraction
     is above the threshold.
     """
-    veg_fraction = ants.load_cube(veg_fraction_path, "vegetation_area_fraction")
+    veg_fraction = ants.io.load.load_cube(veg_fraction_path, "vegetation_area_fraction")
     urban_fraction = veg_fraction.extract(iris.Constraint(pseudo_level=urban_tile_id))
     if urban_fraction is None:
         raise ValueError(
             f"No pseudo level {urban_tile_id} (urban tile) in {veg_fraction_path}"
         )
 
-    land_mask = ~np.ma.getmaskarray(urban_fraction.data)
+    land_mask = ~numpy.ma.getmaskarray(urban_fraction.data)
     urban_mask = land_mask & (urban_fraction.data.filled(0.0) > urban_threshold)
     if not urban_mask.any():
         raise ValueError(
@@ -116,29 +115,64 @@ def load_source_cubelist(source_directory):
     Step 2: load the source file of each variable into a single cubelist. Each
     cube is named by the variable name of its source file.
     """
-    source_files = [
-        ("roof_height", "global_HT_ROOF_1km_masked_gapfilled_QC_v1.1.nc"),
-        ("canyon_height_to_width", "global_CANYON_HWR_1km_masked_gapfilled_QC_v1.1.nc"),
-        ("roof_fraction", "global_WTLUNIT_ROOF_1km_masked_QC_v1.1.nc"),
-        ("canyon_road_pervious_fraction", "global_WTROAD_PERV_1km_masked_QC_v1.1.nc"),
-        ("roof_albedo", "global_ALB_ROOF_1km_masked_gapfilled_QC_v1.1.nc"),
-        ("wall_albedo", "global_ALB_WALL_1km_masked_gapfilled_QC_v1.1.nc"),
-        ("impervious_road_albedo", "global_ALB_IMPROAD_1km_masked_gapfilled_QC_v1.1.nc"),
-        ("pervious_road_albedo", "global_ALB_PERROAD_1km_masked_gapfilled_QC_v1.1.nc"),
-        ("roof_emissivity", "global_EM_ROOF_1km_masked_gapfilled_QC_v1.1.nc"),
-        ("wall_emissivity", "global_EM_WALL_1km_masked_gapfilled_QC_v1.1.nc"),
-        ("impervious_road_emissivity", "global_EM_IMPROAD_1km_masked_gapfilled_QC_v1.1.nc"),
-        ("pervious_road_emissivity", "global_EM_PERROAD_1km_masked_gapfilled_QC_v1.1.nc"),
+    # Set of source variables which share the file name pattern
+    source_variables = [
+        ("HT_ROOF", "roof_height"),
+        ("CANYON_HWR", "canyon_height_to_width"),
+        ("ALB_ROOF", "roof_albedo"),
+        ("ALB_WALL", "wall_albedo"),
+        ("ALB_IMPROAD", "impervious_road_albedo"),
+        ("ALB_PERROAD", "pervious_road_albedo"),
+        ("EM_ROOF", "roof_emissivity"),
+        ("EM_WALL", "wall_emissivity"),
+        ("EM_IMPROAD", "impervious_road_emissivity"),
+        ("EM_PERROAD", "pervious_road_emissivity")
     ]
 
+    file_name = lambda var: os.path.join(source_directory, f"global_{var}_1km_masked_gapfilled_QC_lon360_v1.1.nc")
+
     source_cubes = iris.cube.CubeList()
-    for variable_name, file_name in source_files:
-        path = os.path.join(source_directory, file_name)
+    for source_name, var_name in source_variables:
+        path = file_name(source_name)
         if not os.path.isfile(path):
             raise FileNotFoundError(f"Urban source file not found: {path}")
-        cube = ants.load_cube(path)
-        cube.rename(variable_name)
+        cube = ants.io.load.load_cube(path, source_name)
+        cube.rename(var_name)
+        # The source sets "lon" for the longitude axis- it needs to be
+        # "longitude" to be recognised by ants (for some reason "latitude" is
+        # already set to its long form?)
+        cube.coord("lon").rename("longitude")
+        # Need to apply coordinate systems to the cube coords
+        cube.coord("longitude").units = "degrees_east"
+        cube.coord("latitude").units = "degrees_north"
+        cube.coord("longitude").coord_system = ants.coord_systems.UM_SPHERE.crs
+        cube.coord("latitude").coord_system = ants.coord_systems.UM_SPHERE.crs
         source_cubes.append(cube)
+
+    # Two additional variables have a different file name pattern (minus _gapfilled)
+    extra_variables = [
+        ("WTLUNIT_ROOF", "roof_fraction"),
+        ("WTROAD_PERV", "canyon_road_pervious_fraction")
+    ]
+
+    file_name = lambda var: os.path.join(source_directory, f"global_{var}_1km_masked_QC_lon360_v1.1.nc")
+
+    for source_name, var_name in extra_variables:
+        path = file_name(source_name)
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"Urban source file not found: {path}")
+        cube = ants.io.load.load_cube(path, source_name)
+        cube.rename(var_name)
+        # The source sets "lon" for the longitude axis- it needs to be
+        # "longitude" to be recognised by ants (for some reason "latitude" is
+        # already set to its long form?)
+        cube.coord("lon").rename("longitude")
+        cube.coord("longitude").units = "degrees_east"
+        cube.coord("latitude").units = "degrees_north"
+        cube.coord("longitude").coord_system = ants.coord_systems.UM_SPHERE.crs
+        cube.coord("latitude").coord_system = ants.coord_systems.UM_SPHERE.crs
+        source_cubes.append(cube)
+
     return source_cubes
 
 
@@ -155,7 +189,7 @@ def regrid_cubelist(source_cubes, urban_mask_cube):
     without a valid regridded value are filled from the nearest valid value,
     and non-urban points are masked.
     """
-    regridded_cubes = decomposition.decompose(
+    regridded_cubes = ants.decomposition.decompose(
         regrid_cubes, source_cubes, urban_mask_cube
     )
     ants.analysis.make_consistent_with_lsm(
@@ -218,8 +252,8 @@ def fill_um_metadata(cubes, land_mask, urban_mask):
     um_cubes = []
     for cube in cubes:
         stash_item, stash_name = um_fields[cube.name()]
-        values = np.where(urban_mask, np.ma.filled(cube.data, 0.0), 0.0)
-        um_cube = cube.copy(np.ma.masked_where(~land_mask, values))
+        values = numpy.where(urban_mask, numpy.ma.filled(cube.data, 0.0), 0.0)
+        um_cube = cube.copy(numpy.ma.masked_where(~land_mask, values))
         um_cube.rename(stash_name)
         um_cube.units = "1"
         um_cube.attributes = {"STASH": iris.fileformats.pp.STASH(1, 0, stash_item)}
@@ -241,9 +275,9 @@ def main(source_directory, veg_fraction_path, urban_tile_id, urban_threshold, ou
         all_fields, land_mask, urban_mask_cube.data
     )
 
-    save.netcdf(output_cubes, outfile)
+    ants.io.save.netcdf(output_cubes, outfile)
     if not netcdf_only:
-        save.ancil(output_cubes, outfile)
+        ants.io.save.ancil(output_cubes, outfile)
 
 
 if __name__ == "__main__":
