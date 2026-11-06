@@ -235,7 +235,7 @@
         script = rose task-run
 
     [[ancil_soil_roughness]]
-        inherit = PBS_medium_serial
+        inherit = PBS_medium_parallel
         script = rose task-run
 
     [[cable_gridinfo]]
