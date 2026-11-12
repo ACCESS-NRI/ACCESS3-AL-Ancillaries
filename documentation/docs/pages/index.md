@@ -62,4 +62,4 @@ You may be developing a script within the workflow, or testing different inputs 
 1. Modify the workflow with the desired changes.
 2. Reinstall with the workflow with `cylc vr <workflow>/<name>`.
 3. Wake the workflow with `cylc play <workflow>/<name>`.
-4. Trigger the task with `cylc trigger <workflow>/<name>//<task_name>`.
+4. Trigger the task with `cylc trigger <workflow>/<name>//*/<task_name>`.
