@@ -1,11 +1,11 @@
-# Defining the Domain
+# Defining the domain
 
 There are a number of different ways to define the domain on which the ancillaries should be created. The method chosen also effects the way the land points are specified. These options correspond to the `GRID_SOURCE` template variable in `rose-suite.conf`. The methods available are:
 
-1. [UM grid namelist](#um-grid-namelist)(`GRID_SOURCE='land_cover'`): Use a UM grid namelist to define the domain. The land points are determined by the source land cover dataset.
-2. [Land-sea mask](#land-sea-mask)(`GRID_SOURCE='land_sea_mask'`): Use a predefined land-sea mask file, either in NetCDF or UM format. The land points are determined by the land mask.
-3. [Ocean mesh](#ocean-mesh)(`GRID_SOURCE='ocean_mesh'`): Use an existing ESMF ocean mesh (as used by ACCESS ocean models), alongside a specified resolution. The land points are determined by points where the ocean mesh says the land fraction is >0.01. Currently available only for global domains accompanied by a resolution, specified in the UM format `n<XXX>e`. Regional domains with a grid namelist is a planned improvement. 
-4. [Land fractions](#land-fractions)(`GRID_SOURCE='land_fractions'`): Use a land fractions NetCDF file. Requires a regular Cartesian grid. The land points are determined by points where the land fraction is >0.0.
+1. [UM grid namelist](#um-grid-namelist) (`GRID_SOURCE='land_cover'`): Use a UM grid namelist to define the domain. The land points are determined by the source land cover dataset.
+2. [Land-sea mask](#land-sea-mask) (`GRID_SOURCE='land_sea_mask'`): Use a predefined land-sea mask file, either in NetCDF or UM format. The land points are determined by the land mask.
+3. [Ocean mesh](#ocean-mesh) (`GRID_SOURCE='ocean_mesh'`): Use an existing ESMF ocean mesh (as used by ACCESS ocean models), alongside a specified resolution. The land points are determined by points where the ocean mesh says the land fraction is >0.01. Currently available only for global domains accompanied by a resolution, specified in the UM format `n<XXX>e`. Regional domains with a grid namelist is a planned improvement. 
+4. [Land fractions](#land-fractions) (`GRID_SOURCE='land_fractions'`): Use a land fractions NetCDF file. Requires a regular Cartesian grid. The land points are determined by points where the land fraction is >0.0.
 
 ### UM grid namelist
 
@@ -24,9 +24,9 @@ The domain is defined by a UM grid namelist. When using a UM grid namelist, the 
     lambda_pole         =   # Longitude pole location
     phi_pole            =   # Latitude pole location
     global              =   # Is domain global?
-    inwsw               =   # Which corner to start in- 0 for for north-west corner, 1 for south-west corner
-    igrid_targ          = 6 # Grid type- should be 6 for all ACCESS applications, denoting ENDGame grid.
-    rotated             = F # Whether to use rotated interpolation- recommended to leave this as false.
+    inwsw               =   # Which corner to start in- 0 for for NW corner, 1 for SW corner
+    igrid_targ          = 6 # Grid type- 6 for all ACCESS applications, denoting ENDGame grid
+    rotated             = F # Whether to use rotated interpolation- recommended is false
 /
 ```
 
