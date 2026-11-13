@@ -21,7 +21,11 @@ The workflow is intended to be configured via the options in the `rose-suite.con
     - `"land_sea_mask"`: Determine the grid from a supplied mask, and use the land mask for the remainder of the simulation. Not recommended for atmosphere-land simulations, as there is no method defined to determine land fractions.
     - `"ocean_mesh"`: Use an ESMF mesh, with a prescribed resolution or grid namelist, to determine the land mask and land fractions.
     - `"land_fractions"`: Use a land fractions ancillary to determine the grid and land sea mask.
-* `RESOLUTION`: *string*, Target resolution, used with the `"ocean_mesh"` grid source. Can be either a UM resolution spec `"n<X>e"` or a UM grid file.
+* `GRID_NAMELIST`: *string*, Path to a UM grid namelist defining the grid. Used with the `"land_cover"` and `"ocean_mesh"` grid sources.
+* `RESOLUTION`: *string*, Target atmosphere resolution as a UM resolution spec (e.g. `"n96e"`), used with the `"ocean_mesh"` grid source.
+* `OCEAN_MESH`: *string*, Path to the ESMF ocean mesh. Only applicable when `GRID_SOURCE` is `"ocean_mesh"`.
+* `LAND_FRACTIONS`: *string*, Path to a land fractions ancillary. Used with the `"land_fractions"` and `"land_sea_mask"` grid sources. With `"land_fractions"` it generates the mask and all downstream ancillaries; with `"land_sea_mask"` it is copied into the workspace and used to generate the ocean mask (for the ocean ancillaries) and the river ancillaries.
+* `LAND_SEA_MASK`: *string*, Path to the land sea mask to use with the `"land_sea_mask"` grid source.
 * `VERTICAL_DISCRETIZATION`: *string*, UM namelist describing the vertical discretization for atmosphere ancillaries.
 * `CALENDAR`: *string*, Calendar to use for time dependent ancillaries. Options are `"360day"` and `"gregorian"`.
 * `BEGIN_YEAR`: *int*, Starting year for time dependent ancillaries.
@@ -33,6 +37,10 @@ The workflow is intended to be configured via the options in the `rose-suite.con
 * `SOIL_INIT_CONDS_METHOD`: *string*, Method to use for generating soil initial conditions. Options are `"functional"`. Soil initial conditions, and a CABLE gridinfo file for offline CABLE, are only generated when `LAND_MODEL` is `"CABLE"`.
 
 For more information about the tasks that makes up the workflow, see the [apps](apps/index.md) section for a visualisation of the graph and brief descriptions of each task.
+
+### Default Configurations
+
+The workflow can be configured for multiple models, and it's not immediately obvious which settings are required for a given model. To this end, a series of default `rose-suite.conf` files for each model have been supplied in the `defaults` folder. To use the default configuration for a given model, overwrite the top level `rose-suite.conf` file with the chosen model's default. The options that still require user input are identified by `<REQUIRED>`. These options are `COMPUTE_PROJECT`, the file to use as the domain definition and the desired time period for workflows that require atmosphere ancillaries.
 
 ## Running the Workflow
 
