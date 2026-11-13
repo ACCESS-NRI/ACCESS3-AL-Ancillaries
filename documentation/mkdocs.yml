@@ -60,6 +60,7 @@ nav:
     - ancil_soil_roughness: pages/apps/ancil_soil_roughness.md
     - ancil_split_grass_types: pages/apps/ancil_split_grass_types.md
     - ancil_topographic_index: pages/apps/ancil_topographic_index.md
+    - ancil_urban_morphology: pages/apps/ancil_urban_morphology.md
     - functional_soil_initial_conditions: pages/apps/functional_soil_initial_conditions.md
     - cable_gridinfo: pages/apps/cable_gridinfo.md
     - landseamask_from_ocean_mesh: pages/apps/landseamask_from_ocean_mesh.md
