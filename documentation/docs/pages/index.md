@@ -42,7 +42,7 @@ The workflow is run with Cylc8. After setting the configurable options, run the 
 cylc vip --run-name=<name>
 ```
 
-The `--run-name` is not required, but highly recommended as it makes it significantly easier to keep track of things when you've generated many sets of ancillaries. The cylc working directory is `/scratch/${PROJECT}/${USER}/cylc-run/CCI-Ancillary-Suite/<some_descriptive_name>` (on Gadi- this is configured centrally, so may vary from machine to machine). The outputs are written to `share/data` in the working directory. The output ancillaries are split by category in a hopefully logical basis, with the `preproc` directory containing files that were created during the workflow, but not required for the model runs.
+The `--run-name` is not required, but highly recommended as it makes it significantly easier to keep track of things when you've generated many sets of ancillaries. The cylc working directory is `/scratch/${PROJECT}/${USER}/cylc-run/CCI-Ancillary-Suite/<name>` (on Gadi- this is configured centrally, so may vary from machine to machine). 
 
 ## Accessing outputs
 
