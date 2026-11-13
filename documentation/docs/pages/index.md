@@ -8,11 +8,22 @@ The *CCI Ancillary Suite* is a Cylc8 workflow, with the Rose plugin, that can be
 * Offline CABLE biogeophysics.
 * Offline JULES.
 
-The default targets are configured for NCI's Gadi machine, but should be portable to other machines with a Cylc installation, assuming the required input data is available.
+The default targets are configured for NCI's Gadi machine, but should be portable to other machines with a Cylc installation, assuming the required input data is available. To get started with Rose/Cylc, see (for example) the [AM3 Rose/Cylc documentation](https://docs.access-hive.org.au/models/run_a_model/run_access-am3/#rosecylc-workflow-manager). The projects required to run this workflow on Gadi are:
 
-## Configuring the Workflow
+* `hr11`
+* `av17`
+* `cm45`
+* `access`
 
-The workflow is intended to be configured via the options in the `rose-suite.conf` file, or via `rose edit`. The options are:
+## Configuring the workflow
+
+The workflow is intended to be configured the options in the `rose-suite.conf` file, which are exposed with the `rose edit` GUI.
+
+### Default configurations
+
+The workflow can be configured for multiple models, and it's not immediately obvious which settings are required for a given model. To this end, a series of default `rose-suite.conf` files for each model have been supplied in the `defaults` folder. To use the default configuration for a given model, overwrite the top level `rose-suite.conf` file with the chosen model's default. The options that still require user input are identified by `<REQUIRED>`. These options are `COMPUTE_PROJECT`, the file to use as the domain definition and the desired time period for workflows that require atmosphere ancillaries.
+
+### Full option list
 
 * `COMPUTE_PROJECT`: *string*, Which project to charge compute to.
 * `LAND_MODEL`: *string*, Which land model to build ancillaries for. Sets the CCI land cover, LAI and canopy height mappings, and default soil layers and depth. Options are `"CABLE"` or `"JULES"`.
@@ -37,10 +48,6 @@ The workflow is intended to be configured via the options in the `rose-suite.con
 * `SOIL_INIT_CONDS_METHOD`: *string*, Method to use for generating soil initial conditions. Options are `"functional"`. Soil initial conditions, and a CABLE gridinfo file for offline CABLE, are only generated when `LAND_MODEL` is `"CABLE"`.
 
 For more information about the tasks that makes up the workflow, see the [apps](apps/index.md) section for a visualisation of the graph and brief descriptions of each task.
-
-### Default Configurations
-
-The workflow can be configured for multiple models, and it's not immediately obvious which settings are required for a given model. To this end, a series of default `rose-suite.conf` files for each model have been supplied in the `defaults` folder. To use the default configuration for a given model, overwrite the top level `rose-suite.conf` file with the chosen model's default. The options that still require user input are identified by `<REQUIRED>`. These options are `COMPUTE_PROJECT`, the file to use as the domain definition and the desired time period for workflows that require atmosphere ancillaries.
 
 ## Running the Workflow
 
