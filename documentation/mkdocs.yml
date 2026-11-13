@@ -25,14 +25,8 @@ edit_uri: edit/main/documentation/docs # MODIFY: If your documentation is in a d
 # Navigation 
 # MODIFY: Set the navigation structure as needed for your site
 nav:
-  - Example Section:
-    - pages/example-section/index.md
-    - Subsection1: pages/example-section/subsection1.md
-    - Subsection2: 
-      - pages/example-section/subsection2/index.md
-      - Example Page: pages/example-section/subsection2/example-page.md
-  - Example Section 2:
-    - pages/example-section2/index.md
+  - Home: pages/index.md
+  - Defining the Domain: pages/defining_the_domain.md
   - Apps:
     - pages/apps/index.md
     - ancil_aeroclim_preproc: pages/apps/ancil_aeroclim_preproc.md
