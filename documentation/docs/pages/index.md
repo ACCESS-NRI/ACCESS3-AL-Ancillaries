@@ -1,7 +1,7 @@
 <!-- # MODIFY -->
-# CCI Ancillary Suite
+# ACCESS3-AL-Ancillary Workflow
 
-The *CCI Ancillary Suite* is a Cylc8 workflow, with the Rose plugin, that can be used to generate atmosphere and land ancillaries for generation 3 ACCESS models (being ACCESS-AM3, ACCESS-CM3, ACCESS-rAM3, ACCESS-rCM3, as well as CABLE and JULES). The starting point for the workflow is the [ESA CCI Land Cover](https://climate.esa.int/en/projects/land-cover/) dataset- a global 300m resolution land cover class dataset. The land cover classes are mapped to surface types in the desired land model, and combined with various UKMO and published datasets, to arrive at a set of compatible ancillaries and forcings for the following applications:
+The *ACCESS3-AL-Ancillary Workflow* is a Cylc8 workflow, with the Rose plugin, that can be used to generate atmosphere and land ancillaries for generation 3 ACCESS models (being ACCESS-AM3, ACCESS-CM3, ACCESS-rAM3, ACCESS-rCM3, as well as CABLE and JULES). The starting point for the workflow is the [ESA CCI Land Cover](https://climate.esa.int/en/projects/land-cover/) dataset- a global 300m resolution land cover class dataset. The land cover classes are mapped to surface types in the desired land model, and combined with various UKMO and published datasets, to arrive at a set of compatible ancillaries and forcings for the following applications:
 
 * Regional Atmosphere-Land v3 (not including boundary or initial conditions).
 * Global Atmosphere-Land v9 with climatological aerosols.
