@@ -32,14 +32,17 @@
 			(ancil_soil_hydrology & ancil_soil_albedo) => merge_soils
 			(ancil_min_tile_fraction & merge_soils) => ancil_soil_dust
 			(ancil_lct & ancil_LAI) => ancil_soil_roughness
-            {# The soil initial conditions and CABLE gridinfo, for offline CABLE, are only built for CABLE #}
-            {% if MODEL_CONFIG.LAND_MODEL == "CABLE" %}
+            {# The soil initial conditions are only built for the standalone land models,
+               and the CABLE gridinfo only for offline CABLE #}
+            {% if MODEL in ["CABLE-standalone", "JULES-standalone"] %}
                 {% if MODEL_CONFIG.SOIL_INIT_CONDS_METHOD == "functional" %}
                     merge_soils => functional_soil_initial_conditions
                 {% else %}
                     {{ raise("Invalid SOIL_INIT_CONDS_METHOD: " ~ MODEL_CONFIG.SOIL_INIT_CONDS_METHOD) }}
                 {% endif %}
-                (merge_soils & ancil_min_tile_fraction & regrid_LAI & functional_soil_initial_conditions) => cable_gridinfo
+                {% if MODEL_CONFIG.LAND_MODEL == "CABLE" %}
+                    (merge_soils & ancil_min_tile_fraction & regrid_LAI & functional_soil_initial_conditions) => cable_gridinfo
+                {% endif %}
             {% endif %}
             {% if MODEL_CONFIG.ATMOSPHERE_ANCILLARIES %}
                 (ancil_orographic_formdrag_preproc & ancil_lct) => ancil_orographic_formdrag

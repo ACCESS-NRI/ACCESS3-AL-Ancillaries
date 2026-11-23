@@ -4,7 +4,8 @@
    trigger-ignored by rose, so must not be referenced.
    Settings that depend on another setting (e.g. RESOLUTION is only used when
    GRID_SOURCE is 'ocean_mesh') are trigger-ignored when not applicable, so
-   they default to none. #}
+   they default to none.
+   The soil initial conditions method only exists for the standalone land models. #}
 {% if MODEL == "ACCESS-AM3" %}
     {% set MODEL_CONFIG = {
         "CALENDAR":                AM3_CALENDAR,
@@ -16,7 +17,6 @@
         "RESOLUTION":              AM3_RESOLUTION | default(none),
         "LAND_SEA_MASK":           AM3_LAND_SEA_MASK | default(none),
         "LAND_FRACTIONS":          AM3_LAND_FRACTIONS | default(none),
-        "SOIL_INIT_CONDS_METHOD":  AM3_SOIL_INIT_CONDS_METHOD | default(none),
         "AEROSOLS":                AM3_AEROSOLS | default(none),
         "VERTICAL_DISCRETIZATION": AM3_VERTICAL_DISCRETIZATION | default(none),
         "BEGIN_YEAR":              AM3_BEGIN_YEAR | default(none),
@@ -33,7 +33,6 @@
         "RESOLUTION":              RAM3_RESOLUTION | default(none),
         "LAND_SEA_MASK":           RAM3_LAND_SEA_MASK | default(none),
         "LAND_FRACTIONS":          RAM3_LAND_FRACTIONS | default(none),
-        "SOIL_INIT_CONDS_METHOD":  RAM3_SOIL_INIT_CONDS_METHOD | default(none),
         "AEROSOLS":                RAM3_AEROSOLS | default(none),
         "VERTICAL_DISCRETIZATION": RAM3_VERTICAL_DISCRETIZATION | default(none),
         "BEGIN_YEAR":              RAM3_BEGIN_YEAR | default(none),
@@ -50,7 +49,6 @@
         "RESOLUTION":              RCM3_RESOLUTION | default(none),
         "LAND_SEA_MASK":           RCM3_LAND_SEA_MASK | default(none),
         "LAND_FRACTIONS":          RCM3_LAND_FRACTIONS | default(none),
-        "SOIL_INIT_CONDS_METHOD":  RCM3_SOIL_INIT_CONDS_METHOD | default(none),
         "AEROSOLS":                RCM3_AEROSOLS | default(none),
         "VERTICAL_DISCRETIZATION": RCM3_VERTICAL_DISCRETIZATION | default(none),
         "BEGIN_YEAR":              RCM3_BEGIN_YEAR | default(none),
@@ -67,7 +65,7 @@
         "RESOLUTION":              CABLE_STANDALONE_RESOLUTION | default(none),
         "LAND_SEA_MASK":           CABLE_STANDALONE_LAND_SEA_MASK | default(none),
         "LAND_FRACTIONS":          CABLE_STANDALONE_LAND_FRACTIONS | default(none),
-        "SOIL_INIT_CONDS_METHOD":  CABLE_STANDALONE_SOIL_INIT_CONDS_METHOD | default(none),
+        "SOIL_INIT_CONDS_METHOD":  CABLE_STANDALONE_SOIL_INIT_CONDS_METHOD,
         "AEROSOLS":                CABLE_STANDALONE_AEROSOLS | default(none),
         "VERTICAL_DISCRETIZATION": CABLE_STANDALONE_VERTICAL_DISCRETIZATION | default(none),
         "BEGIN_YEAR":              CABLE_STANDALONE_BEGIN_YEAR | default(none),
@@ -84,7 +82,7 @@
         "RESOLUTION":              JULES_STANDALONE_RESOLUTION | default(none),
         "LAND_SEA_MASK":           JULES_STANDALONE_LAND_SEA_MASK | default(none),
         "LAND_FRACTIONS":          JULES_STANDALONE_LAND_FRACTIONS | default(none),
-        "SOIL_INIT_CONDS_METHOD":  JULES_STANDALONE_SOIL_INIT_CONDS_METHOD | default(none),
+        "SOIL_INIT_CONDS_METHOD":  JULES_STANDALONE_SOIL_INIT_CONDS_METHOD,
         "AEROSOLS":                JULES_STANDALONE_AEROSOLS | default(none),
         "VERTICAL_DISCRETIZATION": JULES_STANDALONE_VERTICAL_DISCRETIZATION | default(none),
         "BEGIN_YEAR":              JULES_STANDALONE_BEGIN_YEAR | default(none),
