@@ -19,30 +19,49 @@ The default targets are configured for NCI's Gadi machine, but should be portabl
 
 The workflow is intended to be configured the options in the `rose-suite.conf` file, which are exposed with the `rose edit` GUI.
 
-### Default configurations
+### Model configurations
 
-The workflow can be configured for multiple models, and it's not immediately obvious which settings are required for a given model. To this end, a series of default `rose-suite.conf` files for each model have been supplied in the `defaults` folder. To use the default configuration for a given model, overwrite the top level `rose-suite.conf` file with the chosen model's default. The options that still require user input are identified by `<REQUIRED>`. These options are `COMPUTE_PROJECT`, the file to use as the domain definition and the desired time period for workflows that require atmosphere ancillaries.
+The workflow can be configured for multiple models, and it's not immediately obvious which settings are required for a given model. To this end, the target model is chosen with the `MODEL` option, and each model has its own set of default settings in the `rose-suite.conf`. These are prefixed by the model name, and are found under the `models` namespace in `rose edit`. Only the settings for the chosen `MODEL` are used, but the settings for all models must remain in the `rose-suite.conf`. The model specific settings and their defaults are:
+
+| Setting | `ACCESS-AM3` (`AM3_`) | `ACCESS-rAM3` (`RAM3_`) | `ACCESS-rCM3` (`RCM3_`) | `CABLE-standalone` (`CABLE_STANDALONE_`) | `JULES-standalone` (`JULES_STANDALONE_`) |
+|---|---|---|---|---|---|
+| `LAND_MODEL` | `"CABLE"` | `"JULES"` | `"JULES"` | `"CABLE"` | `"JULES"` |
+| `GRID_SOURCE` | `"ocean_mesh"` | `"land_cover"` | `"land_fractions"` | `"land_cover"` | `"land_cover"` |
+| `ATMOSPHERE_ANCILLARIES` | `True` | `True` | `True` | `False` | `False` |
+| `AEROSOLS` | `"NetCDF"` | `"PP"` | `"PP"` | `"NetCDF"` | `"NetCDF"` |
+| `CALENDAR` | `"gregorian"` | `"360day"` | `"gregorian"` | `"360day"` | `"360day"` |
+
+For example, the calendar used for ACCESS-rAM3 is set by `RAM3_CALENDAR`. The settings for the chosen model are also made available to every task as environment variables, without the prefix, e.g. `CALENDAR`.
+
+The remaining options are shared by all models. The options that require user input are `COMPUTE_PROJECT`, the file to use as the domain definition (determined by the `GRID_SOURCE`) and the desired time period for workflows that require atmosphere ancillaries.
 
 ### Full option list
 
-* `COMPUTE_PROJECT`: *string*, Which project to charge compute to.
-* `LAND_MODEL`: *string*, Which land model to build ancillaries for. Sets the CCI land cover, LAI and canopy height mappings, and default soil layers and depth. Options are `"CABLE"` or `"JULES"`.
-* `GRID_SOURCE`: *string*, Which source to use for the grid. Options are:
+* `MODEL`: *string*, Which model to build ancillaries for. Selects which set of model specific settings (below) is used. Options are `"ACCESS-AM3"`, `"ACCESS-rAM3"`, `"ACCESS-rCM3"`, `"CABLE-standalone"` or `"JULES-standalone"`.
+
+The model specific settings, each prefixed by the model prefix (e.g. `AM3_LAND_MODEL`):
+
+* `<PREFIX>_LAND_MODEL`: *string*, Which land model to build ancillaries for. Sets the CCI land cover, LAI and canopy height mappings, and default soil layers and depth. Options are `"CABLE"` or `"JULES"`.
+* `<PREFIX>_GRID_SOURCE`: *string*, Which source to use for the grid. Options are:
     - `"land_cover"`: Determine the grid from a UM grid namelist, and allow the CCI land cover to determine the land mask and land fractions.
     - `"land_sea_mask"`: Determine the grid from a supplied mask, and use the land mask for the remainder of the simulation. Not recommended for atmosphere-land simulations, as there is no method defined to determine land fractions.
     - `"ocean_mesh"`: Use an ESMF mesh, with a prescribed resolution or grid namelist, to determine the land mask and land fractions.
     - `"land_fractions"`: Use a land fractions ancillary to determine the grid and land sea mask.
+* `<PREFIX>_ATMOSPHERE_ANCILLARIES`: *bool*, Whether to generate atmosphere ancillaries for coupled simulations.
+* `<PREFIX>_AEROSOLS`: *string*, Which version of the aerosols to create. Regional models like ACCESS-rAM3 use `"PP"`, while global models like ACCESS-AM3 use `"NetCDF"`.
+* `<PREFIX>_CALENDAR`: *string*, Calendar to use for time dependent ancillaries. Options are `"360day"` and `"gregorian"`.
+
+The options shared by all models:
+
+* `COMPUTE_PROJECT`: *string*, Which project to charge compute to.
 * `GRID_NAMELIST`: *string*, Path to a UM grid namelist defining the grid. Used with the `"land_cover"` and `"ocean_mesh"` grid sources.
 * `RESOLUTION`: *string*, Target atmosphere resolution as a UM resolution spec (e.g. `"n96e"`), used with the `"ocean_mesh"` grid source.
 * `OCEAN_MESH`: *string*, Path to the ESMF ocean mesh. Only applicable when `GRID_SOURCE` is `"ocean_mesh"`.
 * `LAND_FRACTIONS`: *string*, Path to a land fractions ancillary. Used with the `"land_fractions"` and `"land_sea_mask"` grid sources. With `"land_fractions"` it generates the mask and all downstream ancillaries; with `"land_sea_mask"` it is copied into the workspace and used to generate the ocean mask (for the ocean ancillaries) and the river ancillaries.
 * `LAND_SEA_MASK`: *string*, Path to the land sea mask to use with the `"land_sea_mask"` grid source.
 * `VERTICAL_DISCRETIZATION`: *string*, UM namelist describing the vertical discretization for atmosphere ancillaries.
-* `CALENDAR`: *string*, Calendar to use for time dependent ancillaries. Options are `"360day"` and `"gregorian"`.
 * `BEGIN_YEAR`: *int*, Starting year for time dependent ancillaries.
 * `END_YEAR`: *int*, Ending year for time dependent ancillaries.
-* `ATMOSPHERE_ANCILLARIES`: *bool*, Whether to generate atmosphere ancillaries for coupled simulations.
-* `AEROSOLS`: *string*, Which version of the aerosols to create. Regional models like ACCESS-rAM3 use `"PP"`, while global models like ACCESS-AM3 use `"NetCDF"`.
 * `URBAN`: *bool*, Whether to include urban fractions in the land cover to surface type mapping.
 * `CCI_YEAR`: *int*, Which year to use from the CCI land cover dataset to use.
 * `SOIL_INIT_CONDS_METHOD`: *string*, Method to use for generating soil initial conditions. Options are `"functional"`. Soil initial conditions, and a CABLE gridinfo file for offline CABLE, are only generated when `LAND_MODEL` is `"CABLE"`.
