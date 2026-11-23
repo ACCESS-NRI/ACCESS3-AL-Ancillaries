@@ -21,7 +21,7 @@ The workflow is intended to be configured the options in the `rose-suite.conf` f
 
 ### Model configurations
 
-The workflow can be configured for multiple models, and it's not immediately obvious which settings are required for a given model. To this end, the target model is chosen with the `MODEL` option, and each model has its own set of default settings in the `rose-suite.conf`. These are prefixed by the model name, and are found under the `models` namespace in `rose edit`. Only the settings for the chosen `MODEL` are used, but the settings for all models must remain in the `rose-suite.conf`. The model specific settings and their defaults are:
+The workflow can be configured for multiple models, and it's not immediately obvious which settings are required for a given model. To this end, the target model is chosen with the `MODEL` option, and each model has its own set of default settings in the `rose-suite.conf`. These are prefixed by the model name. In `rose edit`, the model is chosen under "Model selection", and "Workflow configuration" then shows only the options for the selected model; the settings for the other models are trigger-ignored, but keep their values in the `rose-suite.conf`. The model specific settings and their defaults are:
 
 | Setting | `ACCESS-AM3` (`AM3_`) | `ACCESS-rAM3` (`RAM3_`) | `ACCESS-rCM3` (`RCM3_`) | `CABLE-standalone` (`CABLE_STANDALONE_`) | `JULES-standalone` (`JULES_STANDALONE_`) |
 |---|---|---|---|---|---|

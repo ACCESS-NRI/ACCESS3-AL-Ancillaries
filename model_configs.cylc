@@ -1,40 +1,47 @@
 {# Model specific settings, imported by flow.cylc. Each model has its own set of
-   template variables in rose-suite.conf, and they are collected here by model name.
-   flow.cylc selects the set for the chosen MODEL. #}
-{% set MODEL_CONFIGS = {
-    "ACCESS-AM3": {
+   template variables in rose-suite.conf, and the set for the chosen MODEL is
+   collected into MODEL_CONFIG here. The settings for the other models are
+   trigger-ignored by rose, so must not be referenced.
+   AEROSOLS is trigger-ignored when ATMOSPHERE_ANCILLARIES is False, so it
+   defaults to none. #}
+{% if MODEL == "ACCESS-AM3" %}
+    {% set MODEL_CONFIG = {
         "LAND_MODEL": AM3_LAND_MODEL,
         "GRID_SOURCE": AM3_GRID_SOURCE,
         "ATMOSPHERE_ANCILLARIES": AM3_ATMOSPHERE_ANCILLARIES,
-        "AEROSOLS": AM3_AEROSOLS,
+        "AEROSOLS": AM3_AEROSOLS | default(none),
         "CALENDAR": AM3_CALENDAR,
-    },
-    "ACCESS-rAM3": {
+    } %}
+{% elif MODEL == "ACCESS-rAM3" %}
+    {% set MODEL_CONFIG = {
         "LAND_MODEL": RAM3_LAND_MODEL,
         "GRID_SOURCE": RAM3_GRID_SOURCE,
         "ATMOSPHERE_ANCILLARIES": RAM3_ATMOSPHERE_ANCILLARIES,
-        "AEROSOLS": RAM3_AEROSOLS,
+        "AEROSOLS": RAM3_AEROSOLS | default(none),
         "CALENDAR": RAM3_CALENDAR,
-    },
-    "ACCESS-rCM3": {
+    } %}
+{% elif MODEL == "ACCESS-rCM3" %}
+    {% set MODEL_CONFIG = {
         "LAND_MODEL": RCM3_LAND_MODEL,
         "GRID_SOURCE": RCM3_GRID_SOURCE,
         "ATMOSPHERE_ANCILLARIES": RCM3_ATMOSPHERE_ANCILLARIES,
-        "AEROSOLS": RCM3_AEROSOLS,
+        "AEROSOLS": RCM3_AEROSOLS | default(none),
         "CALENDAR": RCM3_CALENDAR,
-    },
-    "CABLE-standalone": {
+    } %}
+{% elif MODEL == "CABLE-standalone" %}
+    {% set MODEL_CONFIG = {
         "LAND_MODEL": CABLE_STANDALONE_LAND_MODEL,
         "GRID_SOURCE": CABLE_STANDALONE_GRID_SOURCE,
         "ATMOSPHERE_ANCILLARIES": CABLE_STANDALONE_ATMOSPHERE_ANCILLARIES,
-        "AEROSOLS": CABLE_STANDALONE_AEROSOLS,
+        "AEROSOLS": CABLE_STANDALONE_AEROSOLS | default(none),
         "CALENDAR": CABLE_STANDALONE_CALENDAR,
-    },
-    "JULES-standalone": {
+    } %}
+{% elif MODEL == "JULES-standalone" %}
+    {% set MODEL_CONFIG = {
         "LAND_MODEL": JULES_STANDALONE_LAND_MODEL,
         "GRID_SOURCE": JULES_STANDALONE_GRID_SOURCE,
         "ATMOSPHERE_ANCILLARIES": JULES_STANDALONE_ATMOSPHERE_ANCILLARIES,
-        "AEROSOLS": JULES_STANDALONE_AEROSOLS,
+        "AEROSOLS": JULES_STANDALONE_AEROSOLS | default(none),
         "CALENDAR": JULES_STANDALONE_CALENDAR,
-    },
-} %}
+    } %}
+{% endif %}

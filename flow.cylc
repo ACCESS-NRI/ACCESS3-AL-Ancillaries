@@ -1,10 +1,8 @@
 #!jinja2
-{# Model specific settings. MODEL_CONFIGS (in model_configs.cylc) maps each model to its
-   own set of template variables, and the set for the chosen MODEL is selected here.
-   The selected settings are used to construct the graph, and are exported as
+{# Model specific settings. MODEL_CONFIG (from model_configs.cylc) holds the settings
+   for the chosen MODEL. They are used to construct the graph, and are exported as
    environment variables in the root task. #}
-{% from "model_configs.cylc" import MODEL_CONFIGS with context %}
-{% set MODEL_CONFIG = MODEL_CONFIGS[MODEL] %}
+{% from "model_configs.cylc" import MODEL_CONFIG with context %}
 {% include "task_resources.cylc" %}
 
 [meta]
@@ -114,7 +112,7 @@
 
             # Model specific settings, selected by MODEL
             MODEL = {{ MODEL }}
-            {% for name, value in MODEL_CONFIG.items() %}
+            {% for name, value in MODEL_CONFIG.items() if value is not none %}
                 {{ name }} = {{ value }}
             {% endfor %}
 
