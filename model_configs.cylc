@@ -2,46 +2,92 @@
    template variables in rose-suite.conf, and the set for the chosen MODEL is
    collected into MODEL_CONFIG here. The settings for the other models are
    trigger-ignored by rose, so must not be referenced.
-   AEROSOLS is trigger-ignored when ATMOSPHERE_ANCILLARIES is False, so it
-   defaults to none. #}
+   Settings that depend on another setting (e.g. RESOLUTION is only used when
+   GRID_SOURCE is 'ocean_mesh') are trigger-ignored when not applicable, so
+   they default to none. #}
 {% if MODEL == "ACCESS-AM3" %}
     {% set MODEL_CONFIG = {
-        "LAND_MODEL": AM3_LAND_MODEL,
-        "GRID_SOURCE": AM3_GRID_SOURCE,
-        "ATMOSPHERE_ANCILLARIES": AM3_ATMOSPHERE_ANCILLARIES,
-        "AEROSOLS": AM3_AEROSOLS | default(none),
-        "CALENDAR": AM3_CALENDAR,
+        "CALENDAR":                AM3_CALENDAR,
+        "GRID_SOURCE":             AM3_GRID_SOURCE,
+        "LAND_MODEL":              AM3_LAND_MODEL,
+        "ATMOSPHERE_ANCILLARIES":  AM3_ATMOSPHERE_ANCILLARIES,
+        "GRID_NAMELIST":           AM3_GRID_NAMELIST | default(none),
+        "OCEAN_MESH":              AM3_OCEAN_MESH | default(none),
+        "RESOLUTION":              AM3_RESOLUTION | default(none),
+        "LAND_SEA_MASK":           AM3_LAND_SEA_MASK | default(none),
+        "LAND_FRACTIONS":          AM3_LAND_FRACTIONS | default(none),
+        "SOIL_INIT_CONDS_METHOD":  AM3_SOIL_INIT_CONDS_METHOD | default(none),
+        "AEROSOLS":                AM3_AEROSOLS | default(none),
+        "VERTICAL_DISCRETIZATION": AM3_VERTICAL_DISCRETIZATION | default(none),
+        "BEGIN_YEAR":              AM3_BEGIN_YEAR | default(none),
+        "END_YEAR":                AM3_END_YEAR | default(none),
     } %}
 {% elif MODEL == "ACCESS-rAM3" %}
     {% set MODEL_CONFIG = {
-        "LAND_MODEL": RAM3_LAND_MODEL,
-        "GRID_SOURCE": RAM3_GRID_SOURCE,
-        "ATMOSPHERE_ANCILLARIES": RAM3_ATMOSPHERE_ANCILLARIES,
-        "AEROSOLS": RAM3_AEROSOLS | default(none),
-        "CALENDAR": RAM3_CALENDAR,
+        "CALENDAR":                RAM3_CALENDAR,
+        "GRID_SOURCE":             RAM3_GRID_SOURCE,
+        "LAND_MODEL":              RAM3_LAND_MODEL,
+        "ATMOSPHERE_ANCILLARIES":  RAM3_ATMOSPHERE_ANCILLARIES,
+        "GRID_NAMELIST":           RAM3_GRID_NAMELIST | default(none),
+        "OCEAN_MESH":              RAM3_OCEAN_MESH | default(none),
+        "RESOLUTION":              RAM3_RESOLUTION | default(none),
+        "LAND_SEA_MASK":           RAM3_LAND_SEA_MASK | default(none),
+        "LAND_FRACTIONS":          RAM3_LAND_FRACTIONS | default(none),
+        "SOIL_INIT_CONDS_METHOD":  RAM3_SOIL_INIT_CONDS_METHOD | default(none),
+        "AEROSOLS":                RAM3_AEROSOLS | default(none),
+        "VERTICAL_DISCRETIZATION": RAM3_VERTICAL_DISCRETIZATION | default(none),
+        "BEGIN_YEAR":              RAM3_BEGIN_YEAR | default(none),
+        "END_YEAR":                RAM3_END_YEAR | default(none),
     } %}
 {% elif MODEL == "ACCESS-rCM3" %}
     {% set MODEL_CONFIG = {
-        "LAND_MODEL": RCM3_LAND_MODEL,
-        "GRID_SOURCE": RCM3_GRID_SOURCE,
-        "ATMOSPHERE_ANCILLARIES": RCM3_ATMOSPHERE_ANCILLARIES,
-        "AEROSOLS": RCM3_AEROSOLS | default(none),
-        "CALENDAR": RCM3_CALENDAR,
+        "CALENDAR":                RCM3_CALENDAR,
+        "GRID_SOURCE":             RCM3_GRID_SOURCE,
+        "LAND_MODEL":              RCM3_LAND_MODEL,
+        "ATMOSPHERE_ANCILLARIES":  RCM3_ATMOSPHERE_ANCILLARIES,
+        "GRID_NAMELIST":           RCM3_GRID_NAMELIST | default(none),
+        "OCEAN_MESH":              RCM3_OCEAN_MESH | default(none),
+        "RESOLUTION":              RCM3_RESOLUTION | default(none),
+        "LAND_SEA_MASK":           RCM3_LAND_SEA_MASK | default(none),
+        "LAND_FRACTIONS":          RCM3_LAND_FRACTIONS | default(none),
+        "SOIL_INIT_CONDS_METHOD":  RCM3_SOIL_INIT_CONDS_METHOD | default(none),
+        "AEROSOLS":                RCM3_AEROSOLS | default(none),
+        "VERTICAL_DISCRETIZATION": RCM3_VERTICAL_DISCRETIZATION | default(none),
+        "BEGIN_YEAR":              RCM3_BEGIN_YEAR | default(none),
+        "END_YEAR":                RCM3_END_YEAR | default(none),
     } %}
 {% elif MODEL == "CABLE-standalone" %}
     {% set MODEL_CONFIG = {
-        "LAND_MODEL": CABLE_STANDALONE_LAND_MODEL,
-        "GRID_SOURCE": CABLE_STANDALONE_GRID_SOURCE,
-        "ATMOSPHERE_ANCILLARIES": CABLE_STANDALONE_ATMOSPHERE_ANCILLARIES,
-        "AEROSOLS": CABLE_STANDALONE_AEROSOLS | default(none),
-        "CALENDAR": CABLE_STANDALONE_CALENDAR,
+        "CALENDAR":                CABLE_STANDALONE_CALENDAR,
+        "GRID_SOURCE":             CABLE_STANDALONE_GRID_SOURCE,
+        "LAND_MODEL":              CABLE_STANDALONE_LAND_MODEL,
+        "ATMOSPHERE_ANCILLARIES":  CABLE_STANDALONE_ATMOSPHERE_ANCILLARIES,
+        "GRID_NAMELIST":           CABLE_STANDALONE_GRID_NAMELIST | default(none),
+        "OCEAN_MESH":              CABLE_STANDALONE_OCEAN_MESH | default(none),
+        "RESOLUTION":              CABLE_STANDALONE_RESOLUTION | default(none),
+        "LAND_SEA_MASK":           CABLE_STANDALONE_LAND_SEA_MASK | default(none),
+        "LAND_FRACTIONS":          CABLE_STANDALONE_LAND_FRACTIONS | default(none),
+        "SOIL_INIT_CONDS_METHOD":  CABLE_STANDALONE_SOIL_INIT_CONDS_METHOD | default(none),
+        "AEROSOLS":                CABLE_STANDALONE_AEROSOLS | default(none),
+        "VERTICAL_DISCRETIZATION": CABLE_STANDALONE_VERTICAL_DISCRETIZATION | default(none),
+        "BEGIN_YEAR":              CABLE_STANDALONE_BEGIN_YEAR | default(none),
+        "END_YEAR":                CABLE_STANDALONE_END_YEAR | default(none),
     } %}
 {% elif MODEL == "JULES-standalone" %}
     {% set MODEL_CONFIG = {
-        "LAND_MODEL": JULES_STANDALONE_LAND_MODEL,
-        "GRID_SOURCE": JULES_STANDALONE_GRID_SOURCE,
-        "ATMOSPHERE_ANCILLARIES": JULES_STANDALONE_ATMOSPHERE_ANCILLARIES,
-        "AEROSOLS": JULES_STANDALONE_AEROSOLS | default(none),
-        "CALENDAR": JULES_STANDALONE_CALENDAR,
+        "CALENDAR":                JULES_STANDALONE_CALENDAR,
+        "GRID_SOURCE":             JULES_STANDALONE_GRID_SOURCE,
+        "LAND_MODEL":              JULES_STANDALONE_LAND_MODEL,
+        "ATMOSPHERE_ANCILLARIES":  JULES_STANDALONE_ATMOSPHERE_ANCILLARIES,
+        "GRID_NAMELIST":           JULES_STANDALONE_GRID_NAMELIST | default(none),
+        "OCEAN_MESH":              JULES_STANDALONE_OCEAN_MESH | default(none),
+        "RESOLUTION":              JULES_STANDALONE_RESOLUTION | default(none),
+        "LAND_SEA_MASK":           JULES_STANDALONE_LAND_SEA_MASK | default(none),
+        "LAND_FRACTIONS":          JULES_STANDALONE_LAND_FRACTIONS | default(none),
+        "SOIL_INIT_CONDS_METHOD":  JULES_STANDALONE_SOIL_INIT_CONDS_METHOD | default(none),
+        "AEROSOLS":                JULES_STANDALONE_AEROSOLS | default(none),
+        "VERTICAL_DISCRETIZATION": JULES_STANDALONE_VERTICAL_DISCRETIZATION | default(none),
+        "BEGIN_YEAR":              JULES_STANDALONE_BEGIN_YEAR | default(none),
+        "END_YEAR":                JULES_STANDALONE_END_YEAR | default(none),
     } %}
 {% endif %}
