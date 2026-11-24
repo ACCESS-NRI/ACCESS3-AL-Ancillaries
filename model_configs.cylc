@@ -5,7 +5,8 @@
    Settings that depend on another setting (e.g. RESOLUTION is only used when
    GRID_SOURCE is 'ocean_mesh') are trigger-ignored when not applicable, so
    they default to none.
-   The soil initial conditions method only exists for the standalone land models. #}
+   The soil initial conditions method only exists for the standalone land models.
+   CMIP7 is a placeholder for demonstration, its applications are not implemented yet. #}
 {% if MODEL == "ACCESS-AM3" %}
     {% set MODEL_CONFIG = {
         "CALENDAR":                AM3_CALENDAR,
@@ -87,5 +88,9 @@
         "VERTICAL_DISCRETIZATION": JULES_STANDALONE_VERTICAL_DISCRETIZATION | default(none),
         "BEGIN_YEAR":              JULES_STANDALONE_BEGIN_YEAR | default(none),
         "END_YEAR":                JULES_STANDALONE_END_YEAR | default(none),
+    } %}
+{% elif MODEL == "CMIP7" %}
+    {% set MODEL_CONFIG = {
+        "SCENARIO":                CMIP7_SCENARIO,
     } %}
 {% endif %}

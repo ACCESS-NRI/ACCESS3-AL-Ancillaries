@@ -39,7 +39,8 @@ The options that require user input are `COMPUTE_PROJECT`, the file to use as th
 
 ### Full option list
 
-* `MODEL`: *string*, Which model to build ancillaries for. Selects which set of model specific settings (below) is used. Options are `"ACCESS-AM3"`, `"ACCESS-rAM3"`, `"ACCESS-rCM3"`, `"CABLE-standalone"` or `"JULES-standalone"`.
+* `MODEL`: *string*, Which model to build ancillaries for. Selects which set of model specific settings (below) is used. Options are `"ACCESS-AM3"`, `"ACCESS-rAM3"`, `"ACCESS-rCM3"`, `"CABLE-standalone"`, `"JULES-standalone"` or `"CMIP7"`.
+* `CMIP7_SCENARIO`: *string*, Which CMIP7 experiment to build ancillaries for. Only shown when `MODEL` is `"CMIP7"`. Options are `"piControl"`, `"historical"`, `"amip"`, `"abrupt-4xCO2"` or `"1pctCO2"`. CMIP7 is currently a placeholder: the CMIP7 applications are not implemented yet, so selecting it stops the workflow at validation.
 
 The model specific settings, each prefixed by the model prefix (e.g. `AM3_LAND_MODEL`):
 

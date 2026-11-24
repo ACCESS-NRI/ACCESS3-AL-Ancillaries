@@ -3,6 +3,10 @@
    for the chosen MODEL. They are used to construct the graph, and are exported as
    environment variables in the root task. #}
 {% from "model_configs.cylc" import MODEL_CONFIG with context %}
+{# CMIP7 is a placeholder for demonstration, its applications are not implemented yet #}
+{% if MODEL == "CMIP7" %}
+    {{ raise("CMIP7 ancillaries are not yet implemented (CMIP7_SCENARIO=" ~ MODEL_CONFIG.SCENARIO ~ ")") }}
+{% endif %}
 {% include "task_resources.cylc" %}
 
 [meta]
