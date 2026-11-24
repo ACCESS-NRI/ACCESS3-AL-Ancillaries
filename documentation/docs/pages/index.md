@@ -25,13 +25,13 @@ The workflow can be configured for multiple models, and it's not immediately obv
 
 The default model specific settings are:
 
-| Setting | `ACCESS-AM3` (`AM3_`) | `ACCESS-rAM3` (`RAM3_`) | `ACCESS-rCM3` (`RCM3_`) | `CABLE-standalone` (`CABLE_STANDALONE_`) | `JULES-standalone` (`JULES_STANDALONE_`) |
-|---|---|---|---|---|---|
-| `LAND_MODEL` | `"CABLE"` | `"JULES"` | `"JULES"` | `"CABLE"` | `"JULES"` |
-| `GRID_SOURCE` | `"ocean_mesh"` | `"land_cover"` | `"land_fractions"` | `"land_cover"` | `"land_cover"` |
-| `ATMOSPHERE_ANCILLARIES` | `True` | `True` | `True` | `False` | `False` |
-| `AEROSOLS` | `"NetCDF"` | `"PP"` | `"PP"` | - | - |
-| `CALENDAR` | `"gregorian"` | `"360day"` | `"gregorian"` | `"360day"` | `"360day"` |
+| Setting | `ACCESS-AM3` (`AM3_`) | `ACCESS-rAM3` (`RAM3_`) | `ACCESS-rCM3` (`RCM3_`) | `CABLE-standalone` (`CABLE_STANDALONE_`) | `JULES-standalone` (`JULES_STANDALONE_`) | `CMIP7` (`CMIP7_`) |
+|---|---|---|---|---|---|---|
+| `LAND_MODEL` | `"CABLE"` | `"JULES"` | `"JULES"` | `"CABLE"` | `"JULES"` | `"CABLE"` |
+| `GRID_SOURCE` | `"ocean_mesh"` | `"land_cover"` | `"land_fractions"` | `"land_cover"` | `"land_cover"` | `"ocean_mesh"` |
+| `ATMOSPHERE_ANCILLARIES` | `True` | `True` | `True` | `False` | `False` | `True` |
+| `AEROSOLS` | `"NetCDF"` | `"PP"` | `"PP"` | - | - | `"NetCDF"` |
+| `CALENDAR` | `"gregorian"` | `"360day"` | `"gregorian"` | `"360day"` | `"360day"` | `"gregorian"` |
 
 The settings for the chosen model that apply to the configuration are made available to every task as environment variables, without the prefix, e.g. `CALENDAR`.
 
@@ -40,7 +40,7 @@ The options that require user input are `COMPUTE_PROJECT`, the file to use as th
 ### Full option list
 
 * `MODEL`: *string*, Which model to build ancillaries for. Selects which set of model specific settings (below) is used. Options are `"ACCESS-AM3"`, `"ACCESS-rAM3"`, `"ACCESS-rCM3"`, `"CABLE-standalone"`, `"JULES-standalone"` or `"CMIP7"`.
-* `CMIP7_SCENARIO`: *string*, Which CMIP7 experiment to build ancillaries for. Only shown when `MODEL` is `"CMIP7"`. Options are `"piControl"`, `"historical"`, `"amip"`, `"abrupt-4xCO2"` or `"1pctCO2"`. CMIP7 is currently a placeholder: the CMIP7 applications are not implemented yet, so selecting it stops the workflow at validation.
+* `CMIP7_SCENARIO`: *string*, Which CMIP7 experiment to build ancillaries for. Only shown when `MODEL` is `"CMIP7"`. Options are `"piControl"`, `"historical"`, `"amip"`, `"abrupt-4xCO2"` or `"1pctCO2"`. CMIP7 has the same model specific settings as the other models (prefix `CMIP7_`), except `BEGIN_YEAR` and `END_YEAR`, which are set by the experiment. CMIP7 is currently a placeholder: the CMIP7 applications are not implemented yet, so selecting it stops the workflow at validation.
 
 The model specific settings, each prefixed by the model prefix (e.g. `AM3_LAND_MODEL`):
 
@@ -60,8 +60,8 @@ The model specific settings, each prefixed by the model prefix (e.g. `AM3_LAND_M
 * `<PREFIX>_ATMOSPHERE_ANCILLARIES`: *bool*, Whether to generate atmosphere ancillaries for coupled simulations.
 * `<PREFIX>_AEROSOLS`: *string*, Which version of the aerosols to create. Regional models like ACCESS-rAM3 use `"PP"`, while global models like ACCESS-AM3 use `"NetCDF"`. Used when generating atmosphere ancillaries.
 * `<PREFIX>_VERTICAL_DISCRETIZATION`: *string*, UM namelist describing the vertical discretization. Used when generating atmosphere ancillaries.
-* `<PREFIX>_BEGIN_YEAR`: *int*, Starting year for time dependent ancillaries. Used when generating atmosphere ancillaries.
-* `<PREFIX>_END_YEAR`: *int*, Ending year (inclusive) for time dependent ancillaries. Used when generating atmosphere ancillaries.
+* `<PREFIX>_BEGIN_YEAR`: *int*, Starting year for time dependent ancillaries. Used when generating atmosphere ancillaries. Not available for `CMIP7`, where the experiment sets the year range.
+* `<PREFIX>_END_YEAR`: *int*, Ending year (inclusive) for time dependent ancillaries. Used when generating atmosphere ancillaries. Not available for `CMIP7`, where the experiment sets the year range.
 
 The options shared by all models:
 

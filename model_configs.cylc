@@ -6,7 +6,8 @@
    GRID_SOURCE is 'ocean_mesh') are trigger-ignored when not applicable, so
    they default to none.
    The soil initial conditions method only exists for the standalone land models.
-   CMIP7 is a placeholder for demonstration, its applications are not implemented yet. #}
+   CMIP7 is a placeholder for demonstration, its applications are not implemented yet.
+   It has no BEGIN_YEAR or END_YEAR, as the year range is set by the CMIP7 scenario. #}
 {% if MODEL == "ACCESS-AM3" %}
     {% set MODEL_CONFIG = {
         "CALENDAR":                AM3_CALENDAR,
@@ -92,5 +93,16 @@
 {% elif MODEL == "CMIP7" %}
     {% set MODEL_CONFIG = {
         "SCENARIO":                CMIP7_SCENARIO,
+        "CALENDAR":                CMIP7_CALENDAR,
+        "GRID_SOURCE":             CMIP7_GRID_SOURCE,
+        "LAND_MODEL":              CMIP7_LAND_MODEL,
+        "ATMOSPHERE_ANCILLARIES":  CMIP7_ATMOSPHERE_ANCILLARIES,
+        "GRID_NAMELIST":           CMIP7_GRID_NAMELIST | default(none),
+        "OCEAN_MESH":              CMIP7_OCEAN_MESH | default(none),
+        "RESOLUTION":              CMIP7_RESOLUTION | default(none),
+        "LAND_SEA_MASK":           CMIP7_LAND_SEA_MASK | default(none),
+        "LAND_FRACTIONS":          CMIP7_LAND_FRACTIONS | default(none),
+        "AEROSOLS":                CMIP7_AEROSOLS | default(none),
+        "VERTICAL_DISCRETIZATION": CMIP7_VERTICAL_DISCRETIZATION | default(none),
     } %}
 {% endif %}
