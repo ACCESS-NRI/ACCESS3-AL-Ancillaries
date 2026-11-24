@@ -153,14 +153,14 @@ def calc_lai(relative_weights, lai_total, lct):
         lct, relative_weights['jules_classes'])
     functional_types = lct[slices]
 
+    # Note: the regridding step, which was included in the upstream RAS, has
+    # been removed here as it was redundant (regridding performed in a
+    # separate task)
     # Regrid the LAI onto the lct grid.
-    lai_tar = ants.analysis.mean(lai_total, grid)
-    if not np.ma.isMaskedArray(lai_tar.data):                                  
-        lai_tar.data = np.ma.array(lai_tar.data)
-    fill_missing_data(functional_types, lai_tar)
+    fill_missing_data(functional_types, lai_total)
 
     # Calculate the LAI for the functional types.
-    results = _calc_lai(functional_types.data, lai_tar.data,
+    results = _calc_lai(functional_types.data, lai_total.data,
                         relative_weights['relative_weights'])
 
     # Tidy-up the resulting cubes metadata.
