@@ -1,16 +1,24 @@
 #!jinja2
+{# Model specific settings. MODEL_CONFIG (from model_configs.cylc) holds the settings
+   for the chosen MODEL. They are used to construct the graph, and are exported as
+   environment variables in the root task. #}
+{% from "model_configs.cylc" import MODEL_CONFIG with context %}
+{# CMIP7 is a placeholder for demonstration, its applications are not implemented yet #}
+{% if MODEL == "CMIP7" %}
+    {{ raise("CMIP7 ancillaries are not yet implemented (CMIP7_SCENARIO=" ~ MODEL_CONFIG.SCENARIO ~ ")") }}
+{% endif %}
 {% include "task_resources.cylc" %}
 
 [meta]
-    title = "CCI Ancillary Suite"
-    description = "Create a set of ancillaries using CCI Land Cover as the primary data source."
+    title = "ACCESS3-AL-Ancillary Workflow"
+    description = "Create a set of {{ MODEL }} ancillaries using CCI Land Cover as the primary data source."
 
 [scheduling]
     [[graph]]
         R1 = """
-            {% if GRID_SOURCE == "ocean_mesh" %}
+            {% if MODEL_CONFIG.GRID_SOURCE == "ocean_mesh" %}
                 (landseamask_from_ocean_mesh & preprocess_CCI_water) => ancil_lct
-            {% elif GRID_SOURCE == "land_fractions" %}
+            {% elif MODEL_CONFIG.GRID_SOURCE == "land_fractions" %}
                 (landseamask_from_land_fractions & preprocess_CCI_water) => ancil_lct
 			{% else %}
 				preprocess_CCI_water => ancil_lct
@@ -28,21 +36,24 @@
 			(ancil_soil_hydrology & ancil_soil_albedo) => merge_soils
 			(ancil_min_tile_fraction & merge_soils) => ancil_soil_dust
 			(ancil_lct & ancil_LAI) => ancil_soil_roughness
-            {# The soil initial conditions and CABLE gridinfo, for offline CABLE, are only built for CABLE #}
-            {% if LAND_MODEL == "CABLE" %}
-                {% if SOIL_INIT_CONDS_METHOD == "functional" %}
+            {# The soil initial conditions are only built for the standalone land models,
+               and the CABLE gridinfo only for offline CABLE #}
+            {% if MODEL in ["CABLE-standalone", "JULES-standalone"] %}
+                {% if MODEL_CONFIG.SOIL_INIT_CONDS_METHOD == "functional" %}
                     merge_soils => functional_soil_initial_conditions
                 {% else %}
-                    {{ raise("Invalid SOIL_INIT_CONDS_METHOD: " ~ SOIL_INIT_CONDS_METHOD) }}
+                    {{ raise("Invalid SOIL_INIT_CONDS_METHOD: " ~ MODEL_CONFIG.SOIL_INIT_CONDS_METHOD) }}
                 {% endif %}
-                (merge_soils & ancil_min_tile_fraction & regrid_LAI & functional_soil_initial_conditions) => cable_gridinfo
+                {% if MODEL_CONFIG.LAND_MODEL == "CABLE" %}
+                    (merge_soils & ancil_min_tile_fraction & regrid_LAI & functional_soil_initial_conditions) => cable_gridinfo
+                {% endif %}
             {% endif %}
-            {% if ATMOSPHERE_ANCILLARIES %}
+            {% if MODEL_CONFIG.ATMOSPHERE_ANCILLARIES %}
                 (ancil_orographic_formdrag_preproc & ancil_lct) => ancil_orographic_formdrag
                 (ancil_lct & ancil_orography_unfiltered_preproc) => ancil_orography_mean => ancil_orographic_wavedrag
-                {% if AEROSOLS == "NetCDF" %}
+                {% if MODEL_CONFIG.AEROSOLS == "NetCDF" %}
                     (ancil_aeroclim_preproc & ancil_orographic_wavedrag) => regrid_aerosol
-                {% elif AEROSOLS == "PP" %}
+                {% elif MODEL_CONFIG.AEROSOLS == "PP" %}
                     ancil_orographic_wavedrag => regrid_seasalt_aerosol
                     ancil_orographic_wavedrag => regrid_biog_aerosol
                     ancil_orographic_wavedrag => regrid_biom_aerosol
@@ -51,7 +62,7 @@
                     ancil_orographic_wavedrag => regrid_blck_aerosol
                     ancil_orographic_wavedrag => regrid_dust_aerosol
                 {% else %}
-                    {{ raise ("Invalid AEROSOLS option: " ~ AEROSOLS) }}
+                    {{ raise ("Invalid AEROSOLS option: " ~ MODEL_CONFIG.AEROSOLS) }}
                 {% endif %}
                 (ancil_orography_filtered_preproc & ancil_orography_mean) => ancil_orographic_wavedrag => regrid_ozone
                 ancil_lct => ancil_clim_dms
@@ -81,33 +92,29 @@
             ANCIL_MASTER="/g/data/access/TIDS/UM/ancil"
             ANCIL_PREPROC_PATH="/g/data/access/TIDS/RMED/ANTS/preproc"
 
-            # Define required variables for the desired grid source
-            {% if GRID_SOURCE == "land_sea_mask" %}
-                TARGET_LSM={{ LAND_SEA_MASK }}
-            {% elif GRID_SOURCE == "land_cover" %}
-                GRID_NAMELIST={{ GRID_NAMELIST }}
-                TARGET_LSM=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask
-            {% elif GRID_SOURCE == "ocean_mesh" %}
-                OCEAN_MESH={{ OCEAN_MESH }}
-                RESOLUTION={{ RESOLUTION }}
-                TARGET_LSM=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask
-            {% elif GRID_SOURCE == "land_fractions" %}
-                LAND_FRACTIONS = {{ LAND_FRACTIONS }}
+            # Model specific settings, selected by MODEL. Settings that don't apply
+            # to the chosen configuration (e.g. RESOLUTION when not using the
+            # ocean_mesh grid source) are not set.
+            MODEL = {{ MODEL }}
+            {% for name, value in MODEL_CONFIG.items() if value is not none %}
+                {{ name }} = {{ value }}
+            {% endfor %}
+
+            # Target land sea mask, either supplied or generated by the workflow
+            {% if MODEL_CONFIG.GRID_SOURCE == "land_sea_mask" %}
+                TARGET_LSM={{ MODEL_CONFIG.LAND_SEA_MASK }}
+            {% else %}
                 TARGET_LSM=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask
             {% endif %}
 
-            {% if ATMOSPHERE_ANCILLARIES %}
-                VERTICAL_DISCRETIZATION={{ VERTICAL_DISCRETIZATION }}
-                BEGIN_YEAR={{ BEGIN_YEAR }}
-                END_YEAR={{ END_YEAR }}
+            {% if MODEL_CONFIG.ATMOSPHERE_ANCILLARIES %}
                 TARGET_OROGRAPHIC_LSM=${ANCIL_TARGET_PATH}/orography/qrparm.orog_wavedrag
             {% endif %}
 
             TARGET_OCEAN=${ANCIL_TARGET_PATH}/land_sea_mask/qrparm.mask_sea
-            CALENDAR={{ CALENDAR }}
             CCI_YEAR={{ CCI_YEAR }}
 
-            {% if LAND_MODEL == "CABLE" %}
+            {% if MODEL_CONFIG.LAND_MODEL == "CABLE" %}
                 MODEL_ICE_TILE = 17
                 MODEL_SOIL_TILE = 14
                 MODEL_C3_GRASS_TILE = 6
@@ -115,7 +122,7 @@
                 MODEL_TREE_TILES = "1,2,3,4"
                 MODEL_SOIL_THICKNESS = "0.022,0.058,0.154,0.409,1.085,2.872"
                 MOISTURE_UNITS = "volumetric"
-            {% elif LAND_MODEL == "JULES" %}
+            {% elif MODEL_CONFIG.LAND_MODEL == "JULES" %}
                 MODEL_ICE_TILE = 9
                 MODEL_SOIL_TILE = 8
                 MODEL_C3_GRASS_TILE = 3
@@ -124,7 +131,7 @@
                 MODEL_SOIL_THICKNESS = "0.1,0.25,0.65,2.0"
                 MOISTURE_UNITS = "mass"
             {% else %}
-                {{ raise("Invalid LAND_MODEL: " ~ LAND_MODEL) }}
+                {{ raise("Invalid LAND_MODEL: " ~ MODEL_CONFIG.LAND_MODEL) }}
             {% endif %}    
 
     [[landseamask_from_ocean_mesh]]
@@ -140,13 +147,13 @@
         inherit = PBS_very_parallel
  
     [[ancil_lct]]
-        {% if GRID_SOURCE == "land_cover" %}
+        {% if MODEL_CONFIG.GRID_SOURCE == "land_cover" %}
             script = rose task-run --command-key=grid_source
-        {% elif GRID_SOURCE == "land_fractions" %}
+        {% elif MODEL_CONFIG.GRID_SOURCE == "land_fractions" %}
             script = rose task-run --command-key=lsm_source
-        {% elif GRID_SOURCE == "land_sea_mask" %}
+        {% elif MODEL_CONFIG.GRID_SOURCE == "land_sea_mask" %}
             script = rose task-run --command-key=lsm_source
-        {% elif GRID_SOURCE == "ocean_mesh" %}
+        {% elif MODEL_CONFIG.GRID_SOURCE == "ocean_mesh" %}
             script = rose task-run --command-key=lsm_source
         {% endif %}
         inherit = PBS_medium_parallel
@@ -155,12 +162,12 @@
             module load ants/1.1.0
         """
         [[[environment]]]
-            {% if LAND_MODEL == "CABLE" %}
+            {% if MODEL_CONFIG.LAND_MODEL == "CABLE" %}
                 DEFAULT_TRANSFORM = "cci2cable.json"
                 {% if URBAN %}
                     DEFAULT_TRANSFORM = "cci2cable_urban.json"
                 {% endif %}
-            {% elif LAND_MODEL == "JULES" %}
+            {% elif MODEL_CONFIG.LAND_MODEL == "JULES" %}
                 DEFAULT_TRANSFORM = "cci2jules.json"
             {% endif %}
 
@@ -184,9 +191,9 @@
         inherit = PBS_medium_serial
         script = rose task-run
         [[[environment]]]
-            {% if LAND_MODEL == "CABLE" %}
+            {% if MODEL_CONFIG.LAND_MODEL == "CABLE" %}
                 GRASS_MAPPING = "ncar_grass_cable.json"
-            {% elif LAND_MODEL == "JULES" %}
+            {% elif MODEL_CONFIG.LAND_MODEL == "JULES" %}
                 GRASS_MAPPING = "ncar_grass_jules.json"
             {% endif %}
 
@@ -202,9 +209,9 @@
         inherit = PBS_medium_parallel
         script = rose task-run
         [[[environment]]]
-            {% if LAND_MODEL == "CABLE" %}
+            {% if MODEL_CONFIG.LAND_MODEL == "CABLE" %}
                 DEFAULT_WEIGHTS = "lai_weights_cable.json"
-            {% elif LAND_MODEL == "JULES" %}
+            {% elif MODEL_CONFIG.LAND_MODEL == "JULES" %}
                 DEFAULT_WEIGHTS = "lai_weights_jules.json"
             {% endif %}
 
@@ -212,9 +219,9 @@
         inherit = PBS_large_serial
         script = rose task-run
         [[[environment]]]
-            {% if LAND_MODEL == "CABLE" %}
+            {% if MODEL_CONFIG.LAND_MODEL == "CABLE" %}
                 DEFAULT_HEIGHT_FACTORS = "canopy_height_factors_cable.json"
-            {% elif LAND_MODEL == "JULES" %}
+            {% elif MODEL_CONFIG.LAND_MODEL == "JULES" %}
                 DEFAULT_HEIGHT_FACTORS = "canopy_height_factors_jules.json"
             {% endif %}
 
@@ -286,8 +293,6 @@
             module load ants/1.2.0
             module load nco
         """
-        [[[environment]]]
-            CALENDAR = {{ CALENDAR }}
 
     [[regrid_aerosol]]
         inherit = PBS_large_parallel

@@ -19,33 +19,55 @@ The default targets are configured for NCI's Gadi machine, but should be portabl
 
 The workflow is intended to be configured the options in the `rose-suite.conf` file, which are exposed with the `rose edit` GUI.
 
-### Default configurations
+### Model configurations
 
-The workflow can be configured for multiple models, and it's not immediately obvious which settings are required for a given model. To this end, a series of default `rose-suite.conf` files for each model have been supplied in the `defaults` folder. To use the default configuration for a given model, overwrite the top level `rose-suite.conf` file with the chosen model's default. The options that still require user input are identified by `<REQUIRED>`. These options are `COMPUTE_PROJECT`, the file to use as the domain definition and the desired time period for workflows that require atmosphere ancillaries.
+The workflow can be configured for multiple models, and it's not immediately obvious which settings are required for a given model. To this end, the target model is chosen with the `MODEL` option, and each model has its own set of default settings in the `rose-suite.conf`, prefixed by the model name (e.g. `RAM3_CALENDAR` sets the calendar for ACCESS-rAM3). In `rose edit`, the model is chosen under "Model selection", and "Workflow configuration" then shows only the options applicable to the selected model. Options that depend on another option are only shown when they apply, e.g. `<PREFIX>_RESOLUTION` is only shown when `<PREFIX>_GRID_SOURCE` is `"ocean_mesh"`. Options that don't apply are trigger-ignored, but keep their values in the `rose-suite.conf`.
+
+The default model specific settings are:
+
+| Setting | `ACCESS-AM3` (`AM3_`) | `ACCESS-rAM3` (`RAM3_`) | `ACCESS-rCM3` (`RCM3_`) | `CABLE-standalone` (`CABLE_STANDALONE_`) | `JULES-standalone` (`JULES_STANDALONE_`) | `CMIP7` (`CMIP7_`) |
+|---|---|---|---|---|---|---|
+| `LAND_MODEL` | `"CABLE"` | `"JULES"` | `"JULES"` | `"CABLE"` | `"JULES"` | `"CABLE"` |
+| `GRID_SOURCE` | `"ocean_mesh"` | `"land_cover"` | `"land_fractions"` | `"land_cover"` | `"land_cover"` | `"ocean_mesh"` |
+| `ATMOSPHERE_ANCILLARIES` | `True` | `True` | `True` | `False` | `False` | `True` |
+| `AEROSOLS` | `"NetCDF"` | `"PP"` | `"PP"` | - | - | `"NetCDF"` |
+| `CALENDAR` | `"gregorian"` | `"360day"` | `"gregorian"` | `"360day"` | `"360day"` | `"gregorian"` |
+
+The settings for the chosen model that apply to the configuration are made available to every task as environment variables, without the prefix, e.g. `CALENDAR`.
+
+The options that require user input are `COMPUTE_PROJECT`, the file to use as the domain definition (determined by the grid source) and the desired time period for workflows that require atmosphere ancillaries.
 
 ### Full option list
 
+* `MODEL`: *string*, Which model to build ancillaries for. Selects which set of model specific settings (below) is used. Options are `"ACCESS-AM3"`, `"ACCESS-rAM3"`, `"ACCESS-rCM3"`, `"CABLE-standalone"`, `"JULES-standalone"` or `"CMIP7"`.
+* `CMIP7_SCENARIO`: *string*, Which CMIP7 experiment to build ancillaries for. Only shown when `MODEL` is `"CMIP7"`. Options are `"piControl"`, `"historical"`, `"amip"`, `"abrupt-4xCO2"` or `"1pctCO2"`. CMIP7 has the same model specific settings as the other models (prefix `CMIP7_`), except `BEGIN_YEAR` and `END_YEAR`, which are set by the experiment. CMIP7 is currently a placeholder: the CMIP7 applications are not implemented yet, so selecting it stops the workflow at validation.
+
+The model specific settings, each prefixed by the model prefix (e.g. `AM3_LAND_MODEL`):
+
+* `<PREFIX>_CALENDAR`: *string*, Calendar to use for time dependent ancillaries. Options are `"360day"` and `"gregorian"`.
+* `<PREFIX>_GRID_SOURCE`: *string*, Which source to use for the grid. Options are:
+    - `"land_cover"`: Determine the grid from a UM grid namelist (`<PREFIX>_GRID_NAMELIST`), and allow the CCI land cover to determine the land mask and land fractions.
+    - `"land_sea_mask"`: Determine the grid from a supplied mask (`<PREFIX>_LAND_SEA_MASK`), and use the land mask for the remainder of the simulation. Not recommended for atmosphere-land simulations, as there is no method defined to determine land fractions.
+    - `"ocean_mesh"`: Use an ESMF mesh (`<PREFIX>_OCEAN_MESH`), with a prescribed resolution (`<PREFIX>_RESOLUTION`), to determine the land mask and land fractions.
+    - `"land_fractions"`: Use a land fractions ancillary (`<PREFIX>_LAND_FRACTIONS`) to determine the grid and land sea mask.
+* `<PREFIX>_GRID_NAMELIST`: *string*, Path to a UM grid namelist defining the grid. Used with the `"land_cover"` grid source.
+* `<PREFIX>_OCEAN_MESH`: *string*, Path to the ESMF ocean mesh. Used with the `"ocean_mesh"` grid source.
+* `<PREFIX>_RESOLUTION`: *string*, Target atmosphere resolution as a UM resolution spec (e.g. `"n96e"`). Used with the `"ocean_mesh"` grid source.
+* `<PREFIX>_LAND_SEA_MASK`: *string*, Path to the land sea mask. Used with the `"land_sea_mask"` grid source.
+* `<PREFIX>_LAND_FRACTIONS`: *string*, Path to a land fractions ancillary. Used with the `"land_fractions"` and `"land_sea_mask"` grid sources. With `"land_fractions"` it generates the mask and all downstream ancillaries; with `"land_sea_mask"` it is copied into the workspace and used to generate the ocean mask (for the ocean ancillaries) and the river ancillaries.
+* `<PREFIX>_LAND_MODEL`: *string*, Which land model to build ancillaries for. Sets the CCI land cover, LAI and canopy height mappings, and default soil layers and depth. Options are `"CABLE"` or `"JULES"`.
+* `<PREFIX>_SOIL_INIT_CONDS_METHOD`: *string*, Method to use for generating soil initial conditions. Options are `"functional"`. Only available for the standalone land models (`CABLE-standalone` and `JULES-standalone`), as soil initial conditions are only generated for these. A CABLE gridinfo file is also generated when the land model is `"CABLE"`.
+* `<PREFIX>_ATMOSPHERE_ANCILLARIES`: *bool*, Whether to generate atmosphere ancillaries for coupled simulations.
+* `<PREFIX>_AEROSOLS`: *string*, Which version of the aerosols to create. Regional models like ACCESS-rAM3 use `"PP"`, while global models like ACCESS-AM3 use `"NetCDF"`. Used when generating atmosphere ancillaries.
+* `<PREFIX>_VERTICAL_DISCRETIZATION`: *string*, UM namelist describing the vertical discretization. Used when generating atmosphere ancillaries.
+* `<PREFIX>_BEGIN_YEAR`: *int*, Starting year for time dependent ancillaries. Used when generating atmosphere ancillaries. Not available for `CMIP7`, where the experiment sets the year range.
+* `<PREFIX>_END_YEAR`: *int*, Ending year (inclusive) for time dependent ancillaries. Used when generating atmosphere ancillaries. Not available for `CMIP7`, where the experiment sets the year range.
+
+The options shared by all models:
+
 * `COMPUTE_PROJECT`: *string*, Which project to charge compute to.
-* `LAND_MODEL`: *string*, Which land model to build ancillaries for. Sets the CCI land cover, LAI and canopy height mappings, and default soil layers and depth. Options are `"CABLE"` or `"JULES"`.
-* `GRID_SOURCE`: *string*, Which source to use for the grid. Options are:
-    - `"land_cover"`: Determine the grid from a UM grid namelist, and allow the CCI land cover to determine the land mask and land fractions.
-    - `"land_sea_mask"`: Determine the grid from a supplied mask, and use the land mask for the remainder of the simulation. Not recommended for atmosphere-land simulations, as there is no method defined to determine land fractions.
-    - `"ocean_mesh"`: Use an ESMF mesh, with a prescribed resolution or grid namelist, to determine the land mask and land fractions.
-    - `"land_fractions"`: Use a land fractions ancillary to determine the grid and land sea mask.
-* `GRID_NAMELIST`: *string*, Path to a UM grid namelist defining the grid. Used with the `"land_cover"` and `"ocean_mesh"` grid sources.
-* `RESOLUTION`: *string*, Target atmosphere resolution as a UM resolution spec (e.g. `"n96e"`), used with the `"ocean_mesh"` grid source.
-* `OCEAN_MESH`: *string*, Path to the ESMF ocean mesh. Only applicable when `GRID_SOURCE` is `"ocean_mesh"`.
-* `LAND_FRACTIONS`: *string*, Path to a land fractions ancillary. Used with the `"land_fractions"` and `"land_sea_mask"` grid sources. With `"land_fractions"` it generates the mask and all downstream ancillaries; with `"land_sea_mask"` it is copied into the workspace and used to generate the ocean mask (for the ocean ancillaries) and the river ancillaries.
-* `LAND_SEA_MASK`: *string*, Path to the land sea mask to use with the `"land_sea_mask"` grid source.
-* `VERTICAL_DISCRETIZATION`: *string*, UM namelist describing the vertical discretization for atmosphere ancillaries.
-* `CALENDAR`: *string*, Calendar to use for time dependent ancillaries. Options are `"360day"` and `"gregorian"`.
-* `BEGIN_YEAR`: *int*, Starting year for time dependent ancillaries.
-* `END_YEAR`: *int*, Ending year for time dependent ancillaries.
-* `ATMOSPHERE_ANCILLARIES`: *bool*, Whether to generate atmosphere ancillaries for coupled simulations.
-* `AEROSOLS`: *string*, Which version of the aerosols to create. Regional models like ACCESS-rAM3 use `"PP"`, while global models like ACCESS-AM3 use `"NetCDF"`.
 * `URBAN`: *bool*, Whether to include urban fractions in the land cover to surface type mapping.
 * `CCI_YEAR`: *int*, Which year to use from the CCI land cover dataset to use.
-* `SOIL_INIT_CONDS_METHOD`: *string*, Method to use for generating soil initial conditions. Options are `"functional"`. Soil initial conditions, and a CABLE gridinfo file for offline CABLE, are only generated when `LAND_MODEL` is `"CABLE"`.
 * `DEV_MODE`: *bool*, Used to keep the workflow alive during development.
 
 For more information about the tasks that makes up the workflow, see the [apps](apps/index.md) section for a visualisation of the graph and brief descriptions of each task.
