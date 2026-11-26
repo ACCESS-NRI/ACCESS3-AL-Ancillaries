@@ -2,7 +2,7 @@
 
 The `ancil_LAI` app derives the leaf area index (LAI) for each plant functional type (PFT) of the land cover type fraction ancillary, from a total (all-vegetation) LAI source. The total LAI is related to the per-PFT LAI through `L_tot = sum_i(L_i * f_i)`, where `f_i` is the fraction of land covered by PFT `i`. Assuming the LAI of each PFT is fixed relative to the others (via a supplied set of relative weights), this system can be solved by substitution to give each PFT's LAI at every grid point. The precise steps performed by the task are:
 
-1. Regrid the total LAI source onto the grid of the land cover type fraction ancillary.
+1. Check that the total LAI source is on the grid of the land cover type fraction ancillary (it is regridded beforehand by `regrid_LAI`), and give it that grid's exact coordinates. No further regridding is done, so small float precision differences between the two grids cannot corrupt the domain boundaries.
 2. Where the total LAI is missing across some (but not all) months, set it to a floor value of `1e-10`; any other unmasked value below this floor is also raised to it.
 3. At each grid point, solve for the per-PFT LAI via substitution, using the supplied relative weights, wherever the total vegetation fraction across the functional types is non-zero.
 4. Where the total vegetation fraction of the functional types is non-zero but less than 20% of the grid box, mask the resulting LAI PFTs, to avoid unreasonably high LAI values from being resolved.
@@ -11,7 +11,7 @@ The `ancil_LAI` app derives the leaf area index (LAI) for each plant functional 
 ## Env Arguments
 
 #### Inputs
-* `LAI_SOURCE`: Total (all-PFT) LAI on the target grid. Must be a NetCDF dataset containing a `leaf_area_index` variable.
+* `LAI_SOURCE`: Total (all-PFT) LAI, already on the same grid as `LAND_COVER` (by default the output of `regrid_LAI`). Must be a NetCDF dataset containing a `leaf_area_index` variable. The app stops with an error if the grids differ by more than a small fraction of a cell.
 * `LAND_COVER`: Land cover type fraction ancillary. Must be a NetCDF dataset with a cube of STASH code `m01s00i216`, used to define the target grid, the functional type fractions and the land-sea mask.
 
 #### Outputs
