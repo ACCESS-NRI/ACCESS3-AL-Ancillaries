@@ -276,7 +276,7 @@ def calc_lai(relative_weights, lai_total, lct):
     fill_missing_data(functional_types, lai_tar)
 
     # Calculate the LAI for the functional types.
-    results = _calc_lai(functional_types.data, lai_total.data,
+    results = _calc_lai(functional_types.data, lai_tar.data,
                         relative_weights['relative_weights'])
 
     # Tidy-up the resulting cubes metadata.
