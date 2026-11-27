@@ -10,6 +10,131 @@ import numpy as np
 MIN_LAI = 1e-10
 
 
+def check_matching_horizontal_grid(source_cube, target_cube,
+                                   tolerance_fraction=0.1):
+    """
+    Check that the source is on the same horizontal grid as the target.
+
+    The coordinates may differ by a small amount (e.g. float precision
+    differences introduced when the source was regridded and saved), but must
+    agree to within a fraction of the smallest grid cell width.
+
+    Parameters
+    ----------
+    source_cube : :class:`~iris.cube.Cube`
+        Cube expected to be on the target grid.
+    target_cube : :class:`~iris.cube.Cube`
+        Cube defining the target grid.
+    tolerance_fraction : float, optional
+        Allowed coordinate difference, as a fraction of the smallest cell
+        width of the target grid.
+
+    Raises
+    ------
+    ValueError
+        If the horizontal grids do not match.
+
+    """
+    source_coords = ants.utils.cube.horizontal_grid(source_cube)
+    target_coords = ants.utils.cube.horizontal_grid(target_cube)
+    for source_coord, target_coord in zip(source_coords, target_coords):
+        if source_coord.shape != target_coord.shape:
+            raise ValueError(
+                f'The LAI source {source_coord.name()} has shape '
+                f'{source_coord.shape}, but the land cover grid has shape '
+                f'{target_coord.shape}. The LAI source must already be on '
+                'the land cover grid (e.g. the output of regrid_LAI).')
+
+        cell_widths = np.abs(np.diff(target_coord.points))
+        tolerance = tolerance_fraction * (
+            cell_widths.min() if cell_widths.size else 1.0)
+        points_match = np.allclose(source_coord.points, target_coord.points,
+                                   rtol=0, atol=tolerance)
+        bounds_match = (
+            not (source_coord.has_bounds() and target_coord.has_bounds())
+            or np.allclose(source_coord.bounds, target_coord.bounds,
+                           rtol=0, atol=tolerance))
+        if not (points_match and bounds_match):
+            raise ValueError(
+                f'The LAI source {source_coord.name()} values differ from '
+                f'the land cover grid by more than {tolerance}. The LAI '
+                'source must already be on the land cover grid (e.g. the '
+                'output of regrid_LAI).')
+
+
+def subset_to_target_grid(source_cube, target_cube):
+    """
+    Extract the region of the source which exactly matches the target grid.
+
+    The decomposition framework provides each target piece with a padded
+    source piece.  Since the source is already on the target grid (with
+    identical coordinates, see :func:`with_target_horizontal_coords`), the
+    matching region is selected by exact coordinate matching rather than
+    regridding.
+
+    Parameters
+    ----------
+    source_cube : :class:`~iris.cube.Cube`
+        Cube on the target grid, covering at least the target region.
+    target_cube : :class:`~iris.cube.Cube`
+        Cube defining the target region.
+
+    Returns
+    -------
+    : :class:`~iris.cube.Cube`
+        The source cube restricted to the target region.
+
+    Raises
+    ------
+    ValueError
+        If the source does not contain every target grid point.
+
+    """
+    slices = [slice(None)] * source_cube.ndim
+    for source_coord, target_coord in zip(
+            ants.utils.cube.horizontal_grid(source_cube),
+            ants.utils.cube.horizontal_grid(target_cube)):
+        matching_indices = np.flatnonzero(
+            np.isin(source_coord.points, target_coord.points))
+        if matching_indices.size != target_coord.shape[0]:
+            raise ValueError(
+                f'The LAI source {source_coord.name()} does not contain '
+                'every point of the land cover grid.')
+        slices[source_cube.coord_dims(source_coord)[0]] = matching_indices
+    return source_cube[tuple(slices)]
+
+
+def with_target_horizontal_coords(source_cube, target_cube):
+    """
+    Return a copy of the source with the target's horizontal coordinates.
+
+    Used to remove float precision differences between the coordinates of
+    datasets which are nominally on the same grid.
+
+    Parameters
+    ----------
+    source_cube : :class:`~iris.cube.Cube`
+        Cube already on the target grid (see
+        :func:`check_matching_horizontal_grid`).
+    target_cube : :class:`~iris.cube.Cube`
+        Cube defining the target grid.
+
+    Returns
+    -------
+    : :class:`~iris.cube.Cube`
+        Copy of the source cube, with the target's horizontal coordinates.
+
+    """
+    aligned_cube = source_cube.copy()
+    for source_coord, target_coord in zip(
+            ants.utils.cube.horizontal_grid(aligned_cube),
+            ants.utils.cube.horizontal_grid(target_cube)):
+        coord_dims = aligned_cube.coord_dims(source_coord)
+        aligned_cube.remove_coord(source_coord)
+        aligned_cube.add_dim_coord(target_coord.copy(), coord_dims)
+    return aligned_cube
+
+
 def fill_missing_data(lct, lai):
     """
     Populate the LAI missing data with appropriate values.
@@ -127,7 +252,8 @@ def calc_lai(relative_weights, lai_total, lct):
         Land cover type fraction ancillary containing the functional type
         classes.
     lai_total : :class:`~iris.cube.Cube`
-        Total leaf area index data.
+        Total leaf area index data, already on the grid of the land cover
+        type fraction (see :func:`check_matching_horizontal_grid`).
 
     Returns
     -------
@@ -135,28 +261,18 @@ def calc_lai(relative_weights, lai_total, lct):
         Lai corresponding to each functional type.
 
     """
-    # Extract the horizontal grid definition from the land cover type fraction.
-    slices = [0] * lct.ndim
     x, y = ants.utils.cube.horizontal_grid(lct)
-    slices[lct.coord_dims(x)[0]] = slice(None)
-    slices[lct.coord_dims(y)[0]] = slice(None)
-    grid = lct[tuple(slices)]
 
     # Extract functional types.
-    p_coord = lct.coord('pseudo_level')
-    p_points = p_coord.points.tolist()
-    slices = [slice(None)] * lct.ndim
-    slices[lct.coord_dims(p_coord)[0]] = np.array(
-        [p_points.index(val) for val in relative_weights['jules_classes']])
-
     slices = ants.analysis.cover_mapping.fetch_lct_slices(
         lct, relative_weights['jules_classes'])
     functional_types = lct[slices]
 
-    # Regrid the LAI onto the lct grid.
-    lai_tar = ants.analysis.mean(lai_total, grid)
-    if not np.ma.isMaskedArray(lai_tar.data):                                  
-        lai_tar.data = np.ma.array(lai_tar.data)
+   # The LAI is already on the lct grid, so extract the region matching this
+    # (possibly decomposed) piece of the lct rather than regridding.  Mask any
+    # invalid values so that they are filled by nearest neighbour.
+    lai_subset = subset_to_target_grid(lai_total, lct)
+    lai_tar = lai_subset.copy(np.ma.masked_invalid(lai_subset.data))
     fill_missing_data(functional_types, lai_tar)
 
     # Calculate the LAI for the functional types.

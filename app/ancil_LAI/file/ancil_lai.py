@@ -9,8 +9,9 @@ type fraction ancillary, that is the vegetative classes.
 
 The following steps are taken:
 
-* The total LAI source is regridded onto the grid of the land cover type
-  fraction grid.
+* The total LAI source, which must already be on the grid of the land cover
+  type fraction (e.g. from regrid_LAI), is checked against that grid and
+  given its exact coordinates, removing float precision differences.
 * The total LAI where missing across some but not all months is set to 1e-10.
 * Any remaining unmasked LAI which is less than 1e-10 is set to 1e-10.
 * At each grid point, calculate LAI corresponding to each of our functional
@@ -104,6 +105,15 @@ def load_data(sources, relative_weights_path):
 def main(sources, relative_weights_path, output_filepath, netcdf_only):
     lai_source, lct, relative_weights = load_data(sources,
                                                        relative_weights_path)
+
+    # The LAI source is already regridded onto the lct grid (by regrid_LAI),
+    # so no further regridding is done here. Regridding again would treat
+    # float precision differences in the coordinates as partial cell
+    # coverage, corrupting the boundary rows/columns of regional domains.
+    # The coordinates are aligned before decomposition, so that each padded
+    # source piece can be matched exactly to its target piece.
+    lai.check_matching_horizontal_grid(lai_source, lct)
+    lai_source = lai.with_target_horizontal_coords(lai_source, lct)
     operation = partial(lai.calc_lai, relative_weights)
     lai_tar = decomp.decompose(operation, lai_source, lct)
 
